@@ -1,0 +1,23 @@
+.page-title {
+  font-size: 3.2rem;
+  word-wrap: break-word;
+  margin-top: 30px;
+  margin-left: 30px;
+}
+
+.logo-img {
+  height: 150px;
+  width: 150px;
+  margin-top: -80px;
+}
+
+.btn {
+  margin: 1em 2em 2em;
+}
+.container-fluid {
+  display: flexbox;
+  flex-direction: column;
+}
+.button-group {
+  align-items: center;
+}

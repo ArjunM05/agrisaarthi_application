@@ -1,0 +1,224 @@
+import { useState } from "react";
+import { Toast, ToastContainer } from "react-bootstrap";
+import { useNavigate } from "react-router";
+
+const FarmerRegistration = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    phoneNumber: "",
+    district: "",
+    farmSize: "",
+    purpose: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [toastShow, setToastShow] = useState(false);
+  const [toastMessage, setToastMessage] = useState({
+    title: "",
+    description: "",
+    variant: "success",
+  });
+  const navigate = useNavigate();
+
+  const showToast = (
+    title: string,
+    description: string,
+    variant: "success" | "danger" = "success"
+  ) => {
+    setToastMessage({ title, description, variant });
+    setToastShow(true);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Basic validation
+    if (
+      !formData.name ||
+      !formData.phoneNumber ||
+      !formData.district ||
+      !formData.farmSize ||
+      !formData.purpose
+    ) {
+      showToast(
+        "Incomplete Form",
+        "Please fill in all required fields",
+        "danger"
+      );
+      return;
+    }
+
+    if (formData.phoneNumber.length < 10) {
+      showToast(
+        "Invalid Phone Number",
+        "Please enter a valid 10-digit phone number",
+        "danger"
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      showToast(
+        "Registration Successful",
+        "Welcome to AgriSaarthi! Your farmer account has been created."
+      );
+    }, 1500);
+
+    navigate("/");
+  };
+  const handleBack = () => {
+    navigate("/login");
+  };
+
+  return (
+    <>
+      <div
+        className="card shadow-lg"
+        style={{ maxWidth: "500px", width: "100%" }}
+      >
+        <div className="card-body p-4">
+          <div className="text-center mb-4">
+            <h2 className="h3 fw-bold text-dark mb-0">FARMER REGISTRATION</h2>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label
+                htmlFor="name"
+                className="form-label text-uppercase fw-medium text-muted small"
+              >
+                NAME*
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                className="form-control"
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label
+                htmlFor="phoneNumber"
+                className="form-label text-uppercase fw-medium text-muted small"
+              >
+                PHONE NUMBER*
+              </label>
+              <input
+                id="phoneNumber"
+                type="tel"
+                value={formData.phoneNumber}
+                onChange={(e) =>
+                  handleInputChange("phoneNumber", e.target.value)
+                }
+                className="form-control"
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label
+                htmlFor="district"
+                className="form-label text-uppercase fw-medium text-muted small"
+              >
+                DISTRICT*
+              </label>
+              <input
+                id="district"
+                type="text"
+                value={formData.district}
+                onChange={(e) => handleInputChange("district", e.target.value)}
+                className="form-control"
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label
+                htmlFor="farmSize"
+                className="form-label text-uppercase fw-medium text-muted small"
+              >
+                FARM SIZE*
+              </label>
+              <input
+                id="farmSize"
+                type="text"
+                value={formData.farmSize}
+                onChange={(e) => handleInputChange("farmSize", e.target.value)}
+                className="form-control"
+                placeholder="e.g., 5 acres"
+                required
+              />
+            </div>
+
+            <div className="mb-4">
+              <label
+                htmlFor="purpose"
+                className="form-label text-uppercase fw-medium text-muted small"
+              >
+                PURPOSE*
+              </label>
+              <textarea
+                id="purpose"
+                value={formData.purpose}
+                onChange={(e) => handleInputChange("purpose", e.target.value)}
+                className="form-control"
+                rows={3}
+                placeholder="Describe your farming purpose and goals"
+                required
+              />
+            </div>
+            <div className="row justify-content-md-center">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn btn-success btn-lg w-100 rounded-pill fw-medium"
+              >
+                {isLoading ? "Registering..." : "REGISTER"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm col-3 rounded-pill"
+                onClick={() => handleBack()}
+              >
+                Go Back
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <ToastContainer position="top-end" className="p-3">
+        <Toast
+          show={toastShow}
+          onClose={() => setToastShow(false)}
+          delay={3000}
+          autohide
+          bg={toastMessage.variant}
+        >
+          <Toast.Header>
+            <strong className="me-auto">{toastMessage.title}</strong>
+          </Toast.Header>
+          <Toast.Body
+            className={toastMessage.variant === "danger" ? "text-white" : ""}
+          >
+            {toastMessage.description}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
+    </>
+  );
+};
+
+export default FarmerRegistration;
