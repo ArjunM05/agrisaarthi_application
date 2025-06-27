@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const ChatbotPage = () => {
+const Chatbot = () => {
 useEffect(() => {
 // Inject Botpress scripts only once
 const existingScript = document.getElementById('botpress-script');
