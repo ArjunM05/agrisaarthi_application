@@ -7,6 +7,7 @@ import "./App.css";
 import LandingPage from "./pages/LandingPage";
 import PestIdentificationPage from "./pages/PestIdentificationPage";
 import AgriBotPage from "./pages/AgriBotPage";
+import ChatBot from './components/ChatBot';
 
 const App = () => {
   return (
@@ -28,6 +29,7 @@ const App = () => {
         />
         <Route path="/agribot" element={<AgriBotPage />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="/chatbot" element={<ChatBot />} />
       </Routes>
     </BrowserRouter>
   );
