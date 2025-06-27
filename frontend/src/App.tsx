@@ -29,7 +29,6 @@ const App = () => {
         />
         <Route path="/agribot" element={<AgriBotPage />} />
         <Route path="*" element={<NotFound />} />
-        <Route path="/chatbot" element={<ChatBot />} />
       </Routes>
     </BrowserRouter>
   );
