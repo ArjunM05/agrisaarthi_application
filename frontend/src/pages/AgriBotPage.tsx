@@ -1,5 +1,5 @@
 import HomeHeader from "../Components/HomeHeader";
-import AgriBot from "../Components/AgriBot";
+import Chatbot from "../Components/ChatBot";
 import HomeFooter from "../Components/HomeFooter";
 
 const AgriBotPage = () => {
@@ -12,7 +12,7 @@ const AgriBotPage = () => {
     >
       <HomeHeader />
 
-      <AgriBot />
+      <Chatbot />
 
       <HomeFooter />
     </div>
