@@ -7,7 +7,7 @@ import "./App.css";
 import LandingPage from "./pages/LandingPage";
 import PestIdentificationPage from "./pages/PestIdentificationPage";
 import AgriBotPage from "./pages/AgriBotPage";
-import ChatBot from './components/ChatBot';
+
 
 const App = () => {
   return (
