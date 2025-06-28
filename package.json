@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@botpress/webchat": "^3.0.0"
+  }
+}
