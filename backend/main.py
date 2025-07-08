@@ -1,10 +1,10 @@
 from flask import jsonify, request
 from decimal import Decimal
-from sqlalchemy.exc import SQLAlchemyError,IntegrityError
 from flask_cors import CORS
+from datetime import datetime
 
 from config import app,db
-from models import User,FarmerDetails,SupplierDetails,AdminDetails,WeatherSchemeCache
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 cors=CORS(app,origins='*')
@@ -19,48 +19,44 @@ def register_user(name: str, email: str, phone: str, password: str, user_type: s
         name (str): The user's name.
         email (str): The user's email (must be unique).
         phone (str): The user's phone number (must be unique).
-        password (str): The password for the account (Don't forget).
+        password (str): The password for the account.
         user_type (str): The type of user (e.g., 'farmer', 'supplier', 'admin').
         location (str): The user's initial location string.
-
-    Returns:
-        bool: True if registration is successful, False otherwise.
     """
-    if  not email or not password or not user_type:
+    if not email or not password or not user_type:
         print("Error: Email, password, and user type are required for registration.")
         return False
 
-    existing_user_email = User.query.filter_by(email=email).first()
-    existing_user_phone = User.query.filter_by(phone=phone).first()
-
-    if existing_user_email:
+    # Check for existing user by email
+    existing_email = db.table('users').select('id').eq('email', email).execute()
+    if existing_email.data:
         print(f"Error: User with email '{email}' already exists.")
         return False
-    if existing_user_phone:
+    # Check for existing user by phone
+    existing_phone = db.table('users').select('id').eq('phone', phone).execute()
+    if existing_phone.data:
         print(f"Error: User with phone '{phone}' already exists.")
         return False
 
     try:
-        new_user = User(
-            name=name,
-            email=email,
-            phone=phone,
-            user_type=user_type,
-            location=location,
-            
-        )
-        new_user.set_password(password)
-
-        db.session.add(new_user)
-        db.session.commit()
-        print(f"User '{email}' registered successfully as {user_type}.")
-        return True
-    except IntegrityError as e:
-        db.session.rollback() # Rollback in case of unique constraint violation or similar
-        print(f"Database integrity error during registration: {e}")
-        return False
+        # Hash the password using werkzeug
+        hashed_password = generate_password_hash(password)
+        # Insert new user
+        result = db.table('users').insert({
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'password': hashed_password,
+            'role': user_type,
+            'district': location
+        }).execute()
+        if result.data:
+            print(f"User '{email}' registered successfully as {user_type}.")
+            return True
+        else:
+            print(f"Error: Failed to insert user into database.")
+            return False
     except Exception as e:
-        db.session.rollback()
         print(f"An unexpected error occurred during registration: {e}")
         return False
 
@@ -69,23 +65,26 @@ def login_user(email: str, password: str) -> bool:
     Authenticates a user based on email and password.
 
     Args:
-        phone (str): The user's email.
+        email (str): The user's email.
         password (str): The plaintext password provided by the user.
-
-    Returns:
-        bool: True if login is successful, False otherwise.
     """
-    user = User.query.filter_by(email=email).first()
-
-    if user and user.check_password(password):
-        print(f"User '{email}' logged in successfully.")
-        # Generate session token??
-        return True
-    else:
-        print(f"Login failed: Invalid email or password.")
+    try:
+        result = db.table('users').select('password_hash').eq('email', email).limit(1).execute()
+        if not result.data:
+            print(f"Login failed: Invalid email or password.")
+            return False
+        user = result.data[0]
+        if check_password_hash(user['password_hash'], password):
+            print(f"User '{email}' logged in successfully.")
+            return True
+        else:
+            print(f"Login failed: Invalid email or password.")
+            return False
+    except Exception as e:
+        print(f"An error occurred during login: {e}")
         return False
 
-def update_user_profile(user_id: int, name: str, phone: str, location: str) -> None:
+def update_user_profile(user_id: int, name: str, phone: str, location: str) -> bool:
     """
     Updates the profile information for a given user.
 
@@ -95,37 +94,44 @@ def update_user_profile(user_id: int, name: str, phone: str, location: str) -> N
         phone (str): The new phone number for the user.
         location (str): The new location string for the user.
     """
-    user = User.query.get(user_id)
-
-    if not user:
+    # Check if user exists
+    user_result = db.table('users').select('id').eq('id', user_id).limit(1).execute()
+    if not user_result.data:
         print(f"Error: User with ID {user_id} not found.")
         return False
 
-    try:
-        if name is not None:
-            user.name = name
-        if phone is not None:
-            existing_user_with_phone = User.query.filter(User.phone == phone, User.id != user_id).first()
-            if existing_user_with_phone:
-                print(f"Error: Phone number '{phone}' already in use by another user.")
-                return False
-            user.phone = phone
-        if location is not None:
-            user.location = location
+    # Check for phone uniqueness (if phone is being updated)
+    if phone is not None:
+        phone_result = db.table('users').select('id').eq('phone', phone).neq('id', user_id).limit(1).execute()
+        if phone_result.data:
+            print(f"Error: Phone number '{phone}' already in use by another user.")
+            return False
 
-        db.session.commit()
-        print(f"User ID {user_id} profile updated successfully.")
-        return True
-    except IntegrityError as e:
-        db.session.rollback()
-        print(f"Database integrity error during profile update: {e}")
+    update_fields = {}
+    if name is not None:
+        update_fields['name'] = name
+    if phone is not None:
+        update_fields['phone'] = phone
+    if location is not None:
+        update_fields['location'] = location
+
+    if not update_fields:
+        print(f"No fields to update for user ID {user_id}.")
         return False
+
+    try:
+        result = db.table('users').update(update_fields).eq('id', user_id).execute()
+        if result.data:
+            print(f"User ID {user_id} profile updated successfully.")
+            return True
+        else:
+            print(f"Error: Failed to update user profile in database.")
+            return False
     except Exception as e:
-        db.session.rollback()
         print(f"An unexpected error occurred during profile update: {e}")
         return False
 
-def update_supplier_details(supplier_id: int, shop_name: str, address: str, latitude: Decimal, longitude: Decimal):
+def update_supplier_details(supplier_id: int, shop_name: str, address: str, latitude: Decimal, longitude: Decimal) -> bool:
     """
     Updates the supplier information.
 
@@ -136,33 +142,38 @@ def update_supplier_details(supplier_id: int, shop_name: str, address: str, lati
         latitude (Decimal): The latitude of the location of the shop.
         longitude (Decimal): The longitude of the location of the shop.
     """
-    supplier = User.query.get(supplier_id)
+    # Check if supplier exists
+    supplier_result = db.table('users').select('id').eq('id', supplier_id).limit(1).execute()
+    if not supplier_result.data:
+        print(f"Error: Supplier with ID {supplier_id} not found.")
+        return False
 
-    if not supplier:
-        print(f"Error: User with ID {supplier_id} not found.")
+    update_fields = {}
+    if shop_name is not None:
+        update_fields['shop_name'] = shop_name
+    if address is not None:
+        update_fields['address'] = address
+    if latitude is not None and longitude is not None:
+        update_fields['latitude'] = float(latitude)
+        update_fields['longitude'] = float(longitude)
+
+    if not update_fields:
+        print(f"No fields to update for supplier ID {supplier_id}.")
         return False
 
     try:
-        if shop_name is not None:
-            supplier.shop_name = shop_name
-        if address is not None:
-            supplier.address = address
-        if latitude is not None and longitude is not None:
-            supplier.latitude = latitude
-            supplier.longitude = longitude
-        db.session.commit()
-        print(f"User ID {supplier_id} profile updated successfully.")
-        return True
-    except IntegrityError as e:
-        db.session.rollback()
-        print(f"Database integrity error during profile update: {e}")
-        return False
+        result = db.table('users').update(update_fields).eq('id', supplier_id).execute()
+        if result.data:
+            print(f"User ID {supplier_id} profile updated successfully.")
+            return True
+        else:
+            print(f"Error: Failed to update supplier profile in database.")
+            return False
     except Exception as e:
-        db.session.rollback()
-        print(f"An unexpected error occurred during profile update: {e}")
+        print(f"An unexpected error occurred during supplier profile update: {e}")
         return False
 
-def update_farmer_details(farmer_id: int, farm_size: Decimal):
+def update_farmer_details(farmer_id: int, farm_size: Decimal) -> bool:
     """
     Updates the farmer information.
 
@@ -170,30 +181,225 @@ def update_farmer_details(farmer_id: int, farm_size: Decimal):
         farmer_id (int): The ID of the farmer to update.
         farm_size (Decimal): The land area of the farm.
     """
-    farmer = User.query.get(farmer_id)
+    # Check if farmer exists
+    farmer_result = db.table('users').select('id').eq('id', farmer_id).limit(1).execute()
+    if not farmer_result.data:
+        print(f"Error: Farmer with ID {farmer_id} not found.")
+        return False
 
-    if not farmer:
-        print(f"Error: User with ID {farmer_id} not found.")
+    update_fields = {}
+    if farm_size is not None:
+        update_fields['farm_size'] = float(farm_size)
+
+    if not update_fields:
+        print(f"No fields to update for farmer ID {farmer_id}.")
         return False
 
     try:
-        if farm_size is not None:
-            farmer.farm_size = farm_size
-        db.session.commit()
-        print(f"User ID {farmer_id} profile updated successfully.")
-        return True
-    except IntegrityError as e:
-        db.session.rollback()
-        print(f"Database integrity error during profile update: {e}")
-        return False
+        result = db.table('users').update(update_fields).eq('id', farmer_id).execute()
+        if result.data:
+            print(f"User ID {farmer_id} profile updated successfully.")
+            return True
+        else:
+            print(f"Error: Failed to update farmer profile in database.")
+            return False
     except Exception as e:
-        db.session.rollback()
-        print(f"An unexpected error occurred during profile update: {e}")
+        print(f"An unexpected error occurred during farmer profile update: {e}")
+        return False
+    
+def update_admin_details(admin_id: int, admin_level: int, department: str) -> bool:
+    """
+    Updates the admin information.
+
+    Args:
+        admin_id (int): The ID of the admin to update.
+        admin_level (int): The authorization level of the admin.
+        department (str): The department in which admin is working.
+    """
+    # Check if admin exists
+    admin_result = db.table('users').select('id').eq('id', admin_id).limit(1).execute()
+    if not admin_result.data:
+        print(f"Error: Admin with ID {admin_id} not found")
         return False
 
+    update_fields = {}
+    if admin_level is not None:
+        update_fields['admin_level'] = admin_level
+    if department is not None:
+        update_fields['department'] = department
+
+    if not update_fields:
+        print(f"No fields to update for admin ID {admin_id}.")
+        return False
+
+    try:
+        result = db.table('users').update(update_fields).eq('id', admin_id).execute()
+        if result.data:
+            print(f"User ID {admin_id} profile updated successfully.")
+            return True
+        else:
+            print(f"Error: Failed to update admin profile in database.")
+            return False
+    except Exception as e:
+        print(f"An unexpected error occurred during admin profile update: {e}")
+        return False
+
+def submit_feedback(user_id: int, rating: int, comments: str) -> bool:
+    """
+    Submits new feedback or a testimonial.
+
+    Args:
+        user_id (int): The ID of the user submitting feedback.
+        rating (int): The rating given (e.g., 1-5).
+        comments (str): The feedback comments.
+    """
+    if not isinstance(rating, int) or not (1 <= rating <= 5):
+        print("Error: Rating must be between 1 and 5.")
+        return False
+
+    try:
+        result = db.table('feedback').insert({
+            'user_id': user_id,
+            'rating': rating,
+            'comments': comments
+        }).execute()
+        if result.data:
+            print(f"Feedback submitted successfully.")
+            return True
+        else:
+            print(f"Error: Failed to submit feedback to database.")
+            return False
+    except Exception as e:
+        print(f"Error submitting feedback: {e}")
+        return False
+    
+def log_sms_interaction(user_phone: str, query_type: str, message: str, response: str) -> bool:
+    """
+    Logs an SMS interaction, including the query, message, and response.
+
+    Args:
+        user_phone (str): The phone number of the user involved in the SMS interaction.
+        query_type (str): The type of query or interaction (e.g., 'pest_detection', 'weather').
+        message (str): The content of the SMS message.
+        response (str, optional): The response sent back, if any. Defaults to None.
+    """
+    if not user_phone or not query_type or not message:
+        print("Error: User phone, query type, and message are required for SMS log.")
+        return False
+
+    try:
+        result = db.table('sms_logs').insert({
+            'user_phone': user_phone,
+            'query_type': query_type,
+            'message': message,
+            'response': response
+        }).execute()
+        if result.data:
+            print(f"SMS interaction logged for {user_phone}.")
+            return True
+        else:
+            print(f"Error: Failed to log SMS interaction to database.")
+            return False
+    except Exception as e:
+        print(f"Error logging SMS interaction: {e}")
+        return False
+
+def log_pest_detection(user_id: int, image_url: str, pest_name: str, confidence: float, dosage: int, xai_path: str = None) -> bool:
+    """
+    Logs the results of a pest detection inference.
+
+    Args:
+        user_id (int): The ID of the user who submitted the image.
+        image_url (str): The URL or path to the image used for inference.
+        pest_name (str): The name of the detected pest.
+        confidence (float): The confidence score of the detection (0.0 to 1.0).
+        dosage (int): The dosage of pesticide to be administered.
+        xai_path (str, optional): URL or path to the Explainable AI visualization. Defaults to None.
+    """
+    if not user_id or not image_url or not pest_name or confidence is None or dosage is None:
+        print("Error: User ID, image URL, pest name, dosage, and confidence are required.")
+        return False
+    if not (0.0 <= confidence <= 1.0):
+        print("Error: Confidence must be a float between 0.0 and 1.0.")
+        return False
+
+    try:
+        data = {
+            'user_id': user_id,
+            'image_url': image_url,
+            'pest_name': pest_name,
+            'confidence': confidence,
+            'dosage': dosage
+        }
+        if xai_path is not None:
+            data['xai_path'] = xai_path
+        result = db.table('pest_inference_results').insert(data).execute()
+        if result.data:
+            print(f"Pest detection logged for User ID {user_id}.")
+            return True
+        else:
+            print(f"Error: Failed to log pest detection to database.")
+            return False
+    except Exception as e:
+        print(f"Error logging pest detection: {e}")
+        return False
+    
+def update_weather_data(location: str, weather_data: dict, schemes: str) -> bool:
+    """
+    Updates or inserts weather data and associated schemes for a specific location in the cache.
+
+    Args:
+        location (str): The geographical location (e.g., city name, coordinates string).
+        weather_data (dict): The weather data in JSON format (will be stored as JSONB).
+        schemes (str): Associated farming schemes or recommendations.
+    """
+    if not location or not weather_data or not schemes:
+        print("Error: Location, weather data and schemes are required.")
+        return False
+    try:
+        # Upsert (insert or update) by location
+        result = db.table('weather_scheme_cache').upsert({
+            'location': location,
+            'weather_data': weather_data,
+            'schemes': schemes
+        }, on_conflict=['location']).execute()
+        if result.data:
+            print(f"Weather data updated for {location}.")
+            return True
+        else:
+            print(f"Error: Failed to update/insert weather data in database.")
+            return False
+    except Exception as e:
+        print(f"Error updating/inserting weather data cache: {e}")
+        return False
+
+def get_weather_data(location: str):
+    """
+    Retrieves cached weather data for a given location.
+
+    Args:
+        location (str): The geographical location (e.g., city name, coordinates string).
+    """
+    try:
+        result = db.table('weather_scheme_cache').select('*').eq('location', location).limit(1).execute()
+        if result.data:
+            return result.data[0]
+        else:
+            return None
+    except Exception as e:
+        print(f"Error retrieving weather data: {e}")
+        return None
 
 #-----------------------------------------------------------------------------------------------------------
 
+
+@app.route('/')
+def get_pesticides():
+    try:
+        result = db.table('pesticide_listings').select("*").limit(5).execute()
+        return jsonify({"status": "success", "data": result.data})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/register', methods=['POST'])
 def register_route():
@@ -202,8 +408,8 @@ def register_route():
     email = data.get('email')
     phone = data.get('phone')
     password = data.get('password')
-    user_type = data.get('userType')
-    location = data.get('location')
+    user_type = data.get('role')
+    location = data.get('district')
 
     if register_user(name, email, phone, password, user_type, location):
         return jsonify({"message": "User registered successfully"}), 201
@@ -249,19 +455,92 @@ def update_supplier_details_route(supplier_id):
         return jsonify({"error": "Profile update failed"}), 400
 
 @app.route('/farmer_details/<int:farmer_id>', methods=['PUT'])
-def update_farmer_details(farmer_id):
+def update_farmer_details_route(farmer_id):
     data = request.get_json()
     farm_size=data.get('farmSize')
 
-    if update_supplier_details(farmer_id, farm_size):
+    if update_farmer_details(farmer_id, farm_size):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
 
+@app.route('/admin_details/<int:admin_id>',methods=['PUT'])
+def update_admin_details_route(admin_id):
+    data = request.get_json()
+    admin_level = data.get('admin_level')
+    department = data.get('department')
+
+    if update_admin_details(admin_id, admin_level, department):
+        return jsonify({"message": "Profile updated successfully"}),200
+    else:
+        return jsonify({"error": "Profile update failed"}), 400
+
+@app.route('/feedback', methods=['POST'])
+def feedback_route():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    rating = data.get('rating')
+    comments = data.get('comments')
+
+    if submit_feedback(user_id, rating, comments):
+        return jsonify({"message": "Feedback submitted"}), 201
+    else:
+        return jsonify({"error": "Failed to submit feedback"}), 400
+    
+@app.route('/sms/log', methods=['POST'])
+def sms_log_route():
+    data = request.get_json()
+    user_phone = data.get('user_phone')
+    query_type = data.get('query_type')
+    message = data.get('message')
+    response = data.get('response') # Response can be optional
+
+    if log_sms_interaction(user_phone, query_type, message, response):
+        return jsonify({"message": "SMS log recorded"}), 201
+    else:
+        return jsonify({"error": "Failed to record SMS log"}), 400
+
+@app.route('/pest_detection/log', methods=['POST'])
+def pest_detection_log_route():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    image_url = data.get('image_url')
+    pest_name = data.get('pest_name')
+    confidence = data.get('confidence')
+    xai_path = data.get('xai_path')
+    dosage = data.get('dosage')
+
+    if log_pest_detection(user_id, image_url, pest_name, confidence, xai_path):
+        return jsonify({"message": "Pest detection logged"}), 201
+    else:
+        return jsonify({"error": "Failed to log pest detection"}), 400
+    
+@app.route('/weather_cache', methods=['POST'])
+def weather_cache_route():
+    data = request.get_json()
+    location = data.get('location')
+    weather_data = data.get('weather_data')
+    schemes = data.get('schemes')
+
+    if update_weather_data(location, weather_data, schemes):
+        return jsonify({"message": "Weather cache updated"}), 201
+    else:
+        return jsonify({"error": "Failed to update weather cache"}), 400
+
+@app.route('/weather_cache/<location>', methods=['GET'])
+def get_weather_cache_route(location):
+    cache_entry = get_weather_data(location)
+    if cache_entry:
+        return jsonify({
+            "location": cache_entry.get("location"),
+            "weather_data": cache_entry.get("weather_data"),
+            "schemes": cache_entry.get("schemes"),
+            "updated_at": cache_entry.get("updated_at")
+        }), 200
+    else:
+        return jsonify({"error": "Location not found in cache"}), 404
+
 #-------------------------------------------------------------------------------------------------
 
 if __name__=="__main__":
-    with app.app_context():
-        db.create_all()
-
     app.run(debug=True,host='0.0.0.0',port=5001)

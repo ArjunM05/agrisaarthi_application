@@ -58,6 +58,7 @@ class SupplierDetails(User):
     latitude=db.Column(db.DECIMAL)
     longitude=db.Column(db.DECIMAL)
     approved=db.Column(db.Boolean)
+    service_areas=db.Column(pg.ARRAY(db.String(128)))
     __mapper_args__={
         'polymorphic_identity':'supplier'
     }
@@ -69,6 +70,8 @@ class FarmerDetails(User):
     __tablename__='farmer_details'
     farmer_id=db.Column(db.Integer,db.ForeignKey('users.id'),primary_key=True)
     farm_size=db.Column(db.DECIMAL)
+    main_crop=db.Column(db.String(128))
+    irrigation_type=db.Column(db.String(128))
     __mapper_args__={
         'polymorphic_identity':'farmer'
     }
@@ -78,7 +81,7 @@ class FarmerDetails(User):
     
 class AdminDetails(User):
     __tablename__='admin_details'
-    admin_id=db.Column(db.Integer,db.ForeignKey('users.id',primary_key=True))
+    admin_id=db.Column(db.Integer,db.ForeignKey('users.id'),primary_key=True)
     admin_level=db.Column(db.Integer,default=1)
     department=db.Column(db.String(50))
     __mapper_args__={
@@ -94,4 +97,56 @@ class WeatherSchemeCache(db.Model):
     location=db.Column(db.String(255),nullable=False)
     weather_data=db.Column(pg.JSONB,nullable=False)
     schemes=db.Column(db.Text,nullable=False)
-    updated_at=db.Column(db.DateTime,default=datetime.now(),onupdate=datetime.now(),nullable=False)
+    updated_at=db.Column(db.DateTime,default=datetime.now(),nullable=False)
+    def __repr__(self):
+        return f'<WeatherCache {self.id} for {self.location} at {self.updated_at}>'
+
+class PestInferenceResults(db.Model):
+    __tablename__='pest_inference_results'
+    id=db.Column(db.Integer,primary_key=True)
+    user_id=db.Column(db.Integer,db.ForeignKey('users.id'))
+    image_url=db.Column(db.Text,nullable=False)
+    pest_name=db.Column(db.String(255),nullable=False)
+    confidence=db.Column(db.Float,nullable=False)
+    xai_path=db.Column(db.Text)
+    dosage=db.Column(db.Numeric,nullable=False)
+    prediction_time=db.Column(db.DateTime,default=datetime.now(),nullable=False)
+
+    def __repr__(self):
+        return f'<PestResult {self.id} for User {self.user_id} - Pest: {self.pest_name}>'
+
+class SMSLogs(db.Model):
+    __tablename__='sms_logs'
+    id=db.Column(db.Integer, primary_key=True)
+    user_id=db.Column(db.Integer,db.ForeignKey('users.id'))
+    user_phone=db.Column(db.String(10),db.ForeignKey('users.phone'))
+    query_type=db.Column(db.Text,nullable=False)
+    message=db.Column(db.Text,nullable=False)
+    response=db.Column(db.Text,nullable=False)
+    timestamp=db.Column(db.DateTime,nullable=False,default=datetime.now())
+
+    def __repr__(self):
+        return f'<SMSLog {self.id} from {self.user_phone} - Type: {self.query_type}>'
+
+class FeedbackTestimonials(db.Model):
+    __tablename__='feedback'
+    id=db.Column(db.Integer, primary_key=True)
+    user_id=db.Column(db.Integer,db.ForeignKey('users.id'))
+    rating=db.Column(db.Numeric,nullable=False)
+    comments=db.Column(db.Text)
+    created_at=db.Column(db.DateTime,default=datetime.now(),nullable=False)
+
+    def __repr__(self):
+        return f'<Feedback {self.id} for User {self.user_id} - Rating: {self.rating}>'
+
+class PesticideListings(db.Model):
+    __tablename__='pesticide_listings'
+    id=db.Column(db.Integer, primary_key=True)
+    supplier_id=db.Column(db.Integer,db.ForeignKey('supplier_details.supplier_id'))
+    pest_target=db.Column(db.String(255),nullable=False)
+    name=db.Column(db.Text,nullable=False)
+    description=db.Column(db.Text,nullable=False)
+    price=db.Column(db.Float,nullable=False)
+    stock=db.Column(db.Integer,nullable=False)
+    image_url=db.Column(db.Text)
+    created_at=db.Column(db.DateTime,default=datetime.now(),nullable=False)
