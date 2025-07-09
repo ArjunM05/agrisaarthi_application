@@ -2,9 +2,9 @@ from flask import jsonify, request
 from decimal import Decimal
 from flask_cors import CORS
 from datetime import datetime
+import bcrypt
 
 from config import app,db
-from werkzeug.security import generate_password_hash, check_password_hash
 
 
 cors=CORS(app,origins='*')
@@ -39,9 +39,7 @@ def register_user(name: str, email: str, phone: str, password: str, user_type: s
         return False
 
     try:
-        # Hash the password using werkzeug
-        hashed_password = generate_password_hash(password)
-        # Insert new user
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         result = db.table('users').insert({
             'name': name,
             'email': email,
@@ -50,7 +48,20 @@ def register_user(name: str, email: str, phone: str, password: str, user_type: s
             'role': user_type,
             'district': location
         }).execute()
-        if result.data:
+        if user_type.lower == 'farmer':
+            result_details = db.table('farmer_details').insert({
+                'user_id': result.data[0]['id'],
+                'farm_size': 0
+            }).execute()
+        elif user_type.lower == 'supplier':
+            result_details = db.table('supplier_details').insert({
+                'user_id': result.data[0]['id'],
+                'shop_name': '',
+                'address': '',
+                'latitude': 0,
+                'longitude': 0
+            }).execute()
+        if result.data and result_details.data:
             print(f"User '{email}' registered successfully as {user_type}.")
             return True
         else:
@@ -69,16 +80,16 @@ def login_user(email: str, password: str) -> bool:
         password (str): The plaintext password provided by the user.
     """
     try:
-        result = db.table('users').select('password_hash').eq('email', email).limit(1).execute()
+        result = db.table('users').select('password').eq('email', email).limit(1).execute()
         if not result.data:
-            print(f"Login failed: Invalid email or password.")
+            print(f"Login failed: Invalid email.")
             return False
         user = result.data[0]
-        if check_password_hash(user['password_hash'], password):
+        if bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
             print(f"User '{email}' logged in successfully.")
             return True
         else:
-            print(f"Login failed: Invalid email or password.")
+            print(f"Login failed: Invalid password.")
             return False
     except Exception as e:
         print(f"An error occurred during login: {e}")
@@ -94,7 +105,6 @@ def update_user_profile(user_id: int, name: str, phone: str, location: str) -> b
         phone (str): The new phone number for the user.
         location (str): The new location string for the user.
     """
-    # Check if user exists
     user_result = db.table('users').select('id').eq('id', user_id).limit(1).execute()
     if not user_result.data:
         print(f"Error: User with ID {user_id} not found.")
@@ -142,7 +152,6 @@ def update_supplier_details(supplier_id: int, shop_name: str, address: str, lati
         latitude (Decimal): The latitude of the location of the shop.
         longitude (Decimal): The longitude of the location of the shop.
     """
-    # Check if supplier exists
     supplier_result = db.table('users').select('id').eq('id', supplier_id).limit(1).execute()
     if not supplier_result.data:
         print(f"Error: Supplier with ID {supplier_id} not found.")
@@ -181,7 +190,6 @@ def update_farmer_details(farmer_id: int, farm_size: Decimal) -> bool:
         farmer_id (int): The ID of the farmer to update.
         farm_size (Decimal): The land area of the farm.
     """
-    # Check if farmer exists
     farmer_result = db.table('users').select('id').eq('id', farmer_id).limit(1).execute()
     if not farmer_result.data:
         print(f"Error: Farmer with ID {farmer_id} not found.")
@@ -216,7 +224,6 @@ def update_admin_details(admin_id: int, admin_level: int, department: str) -> bo
         admin_level (int): The authorization level of the admin.
         department (str): The department in which admin is working.
     """
-    # Check if admin exists
     admin_result = db.table('users').select('id').eq('id', admin_id).limit(1).execute()
     if not admin_result.data:
         print(f"Error: Admin with ID {admin_id} not found")
@@ -304,7 +311,7 @@ def log_sms_interaction(user_phone: str, query_type: str, message: str, response
         print(f"Error logging SMS interaction: {e}")
         return False
 
-def log_pest_detection(user_id: int, image_url: str, pest_name: str, confidence: float, dosage: int, xai_path: str = None) -> bool:
+def log_pest_detection(user_id: int, image_url: str, pest_name: str, confidence: float, dosage: int, xai_path: str = "") -> bool:
     """
     Logs the results of a pest detection inference.
 
@@ -357,12 +364,11 @@ def update_weather_data(location: str, weather_data: dict, schemes: str) -> bool
         print("Error: Location, weather data and schemes are required.")
         return False
     try:
-        # Upsert (insert or update) by location
         result = db.table('weather_scheme_cache').upsert({
             'location': location,
             'weather_data': weather_data,
             'schemes': schemes
-        }, on_conflict=['location']).execute()
+        }, on_conflict="location").execute()
         if result.data:
             print(f"Weather data updated for {location}.")
             return True
@@ -390,16 +396,64 @@ def get_weather_data(location: str):
         print(f"Error retrieving weather data: {e}")
         return None
 
+def get_schemes_by_location(location: str):
+    """
+    Retrieves schemes for a given location.
+
+    Args:
+        location (str): The location string.
+    """
+    result = db.table('weather_scheme_cache').select('schemes').eq('location', location).limit(1).execute()
+    if result.data:
+        return result.data[0].get('schemes')
+    return None
+
+def get_user_name(user_id=None, email=None):
+    """
+    Retrieves the name of a user by user_id or email.
+
+    Args:
+        user_id (int, optional): The user's ID.
+        email (str, optional): The user's email.
+    """
+    if user_id is not None:
+        result = db.table('users').select('name').eq('id', user_id).limit(1).execute()
+    elif email is not None:
+        result = db.table('users').select('name').eq('email', email).limit(1).execute()
+    else:
+        return None
+    if result.data:
+        return result.data[0]['name']
+    return None
+
+def get_last_4_pest_images(user_id) -> list:
+    """
+    Retrieves the image URLs of the last 4 pests searched by a user.
+
+    Args:
+        user_id (int): The user's ID.
+    """
+    result = db.table('pest_inference_results').select('image_url').eq('user_id', user_id).order('prediction_time', desc=True).limit(4).execute()
+    if result.data:
+        return [row['image_url'] for row in result.data]
+    return []
+
+def get_last_contacted_supplier(user_id):
+    """
+    Retrieves the last contacted supplier for a user from sms_logs.
+
+    Args:
+        user_id (int): The user's ID.
+    """
+    # Assuming 'query_type' or 'message' can be used to filter supplier contacts
+    result = db.table('sms_logs').select('user_phone').eq('user_id', user_id).eq('query_type', 'supplier_contact').order('timestamp', desc=True).limit(1).execute()
+    if result.data:
+        return result.data[0]['user_phone']
+    return None
+
 #-----------------------------------------------------------------------------------------------------------
 
 
-@app.route('/')
-def get_pesticides():
-    try:
-        result = db.table('pesticide_listings').select("*").limit(5).execute()
-        return jsonify({"status": "success", "data": result.data})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/register', methods=['POST'])
 def register_route():
@@ -539,6 +593,43 @@ def get_weather_cache_route(location):
         }), 200
     else:
         return jsonify({"error": "Location not found in cache"}), 404
+
+
+@app.route('/schemes/<location>', methods=['GET'])
+def schemes_route(location):
+    schemes = get_schemes_by_location(location)
+    if schemes:
+        return jsonify({'schemes': schemes}), 200
+    else:
+        return jsonify({'error': 'Schemes not found'}), 404
+
+@app.route('/user_name', methods=['POST'])
+def user_name_route():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    email = data.get('email')
+    name = get_user_name(user_id, email)
+    if name:
+        return jsonify({'name': name}), 200
+    else:
+        return jsonify({'error': 'User not found'}), 404
+
+@app.route('/last_pest_images', methods=['POST'])
+def last_pest_images_route():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    images = get_last_4_pest_images(user_id)
+    return jsonify({'images': images}), 200
+
+@app.route('/last_supplier', methods=['POST'])
+def last_supplier_route():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    supplier = get_last_contacted_supplier(user_id)
+    if supplier:
+        return jsonify({'supplier': supplier}), 200
+    else:
+        return jsonify({'error': 'No supplier found'}), 404
 
 #-------------------------------------------------------------------------------------------------
 
