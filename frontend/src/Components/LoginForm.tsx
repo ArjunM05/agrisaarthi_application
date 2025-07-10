@@ -3,9 +3,8 @@ import { Toast, ToastContainer } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 const LoginForm = () => {
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [otp, setOtp] = useState("");
-  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [toastShow, setToastShow] = useState(false);
   const [toastMessage, setToastMessage] = useState({
@@ -24,49 +23,70 @@ const LoginForm = () => {
     setToastShow(true);
   };
 
-  const handleSendOtp = async () => {
-    if (!phoneNumber || phoneNumber.length < 10) {
+  const handleLogin = async () => {
+    if (!email || !password) {
       showToast(
-        "Invalid Phone Number",
-        "Please enter a valid 10-digit phone number",
+        "Missing Fields",
+        "Please enter both email and password",
         "danger"
       );
       return;
     }
-
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsOtpSent(true);
-      setIsLoading(false);
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       showToast(
-        "OTP Sent",
-        "Please check your phone for the verification code"
+        "Invalid Email",
+        "Please enter a valid email address",
+        "danger"
       );
-    }, 1500);
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length < 4) {
-      showToast("Invalid OTP", "Please enter the complete OTP", "danger");
-      navigate("/");
       return;
     }
-
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      // Call Flask backend API
+      const response = await fetch("http://localhost:5001/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store user type in localStorage
+        localStorage.setItem("user_type", data.role);
+        localStorage.setItem("user_email", email);
+
+        showToast("Login Successful", data.message);
+
+        // Navigate based on user type
+        if (data.role === "farmer") {
+          navigate("/farmer");
+        } else if (data.role === "supplier") {
+          navigate("/supplier");
+        } else {
+          showToast("Unknown User Type", data.message, "danger");
+        }
+      } else {
+        showToast(
+          "Login Failed",
+          data.error || "Invalid credentials",
+          "danger"
+        );
+      }
+    } catch (error) {
+      showToast("Connection Error", "Unable to connect to server", "danger");
+    } finally {
       setIsLoading(false);
-      showToast("Login Successful", "Welcome to AgriSaarthi!");
-    }, 1500);
+    }
   };
 
-  const handleRegister = (type: "farmer" | "supplier") => {
-    if (type === "farmer") {
-      navigate("/farmer-registration");
-    } else {
-      navigate("/supplier-registration");
-    }
+  const handleRegister = () => {
+    navigate("/registration");
   };
 
   return (
@@ -80,75 +100,59 @@ const LoginForm = () => {
             <h2 className="h3 fw-bold text-dark mb-0">LOGIN</h2>
           </div>
 
-          <div className="mb-4">
+          <div className="mb-3">
             <label
-              htmlFor="phone"
+              htmlFor="email"
               className="form-label text-uppercase fw-medium text-muted small"
             >
-              PHONE NUMBER
+              EMAIL
             </label>
             <input
-              id="phone"
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="Enter your phone number"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
               className="form-control form-control-lg"
-              disabled={isOtpSent}
+              autoComplete="username"
             />
           </div>
 
-          {!isOtpSent ? (
-            <div className="row justify-content-md-center">
-              <button
-                onClick={handleSendOtp}
-                disabled={isLoading}
-                className="btn btn-success btn-lg w-100 rounded-pill fw-medium col-4"
-              >
-                {isLoading ? "Sending..." : "Send OTP"}
-              </button>
-            </div>
-          ) : (
-            <div>
-              <div className="mb-3">
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="Enter OTP"
-                  className="form-control form-control-lg"
-                  maxLength={6}
-                />
-              </div>
-              <div className="row justify-content-md-center">
-                <button
-                  onClick={handleVerifyOtp}
-                  disabled={isLoading}
-                  className="btn btn-success btn-lg w-50 rounded-pill fw-medium"
-                >
-                  {isLoading ? "Verifying..." : "VERIFY"}
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="mb-4">
+            <label
+              htmlFor="password"
+              className="form-label text-uppercase fw-medium text-muted small"
+            >
+              PASSWORD
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              className="form-control form-control-lg"
+              autoComplete="current-password"
+            />
+          </div>
 
-          <div className="row g-2 mt-2 align-items-center">
-            <div className="col-5">
-              <button
-                onClick={() => handleRegister("farmer")}
-                className="btn btn-success w-100 rounded-pill fw-medium"
-              >
-                REGISTER AS FARMER
-              </button>
-            </div>
-            <div className="col-5">
-              <button
-                onClick={() => handleRegister("supplier")}
-                className="btn btn-success w-100 rounded-pill fw-medium"
-              >
-                REGISTER AS SUPPLIER
-              </button>
-            </div>
+          <div className="row justify-content-md-center">
+            <button
+              onClick={handleLogin}
+              disabled={isLoading}
+              className="btn btn-success btn-lg w-100 rounded-pill fw-medium mb-2"
+            >
+              {isLoading ? "Logging in..." : "LOGIN"}
+            </button>
+          </div>
+
+          <div className="row justify-content-md-center">
+            <button
+              onClick={() => handleRegister()}
+              className="btn btn-outline-success btn-lg w-100 rounded-pill fw-medium"
+            >
+              REGISTER
+            </button>
           </div>
         </div>
       </div>

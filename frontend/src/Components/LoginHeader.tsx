@@ -13,7 +13,7 @@ const LoginHeader = () => {
         <div className="row align-items-center py-3 px-4">
           <div className="col">
             <h1 className="h2 h1-md fw-bold text-dark mb-0">
-              WELCOME TO AGRISAARTHI!
+              WELCOME TO AGROSAARTHI!
             </h1>
           </div>
 
@@ -52,7 +52,7 @@ const LoginHeader = () => {
                 style={{ width: "48px", height: "48px", objectFit: "cover" }}
               />
               <div className="lh-1">
-                <div className="fs-5 fw-semibold text-success">Agri</div>
+                <div className="fs-5 fw-semibold text-success">Agro</div>
                 <div className="fs-5 fw-semibold text-success">Saarthi</div>
               </div>
             </div>

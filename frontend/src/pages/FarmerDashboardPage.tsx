@@ -1,11 +1,9 @@
-// src/pages/PestIdentificationPage.tsx
-
-import React from "react";
+// src/pages/FarmerDashboardPage.tsx
 import HomeHeader from "../Components/HomeHeader";
 import HomeFooter from "../Components/HomeFooter";
-import PestIdentification from "../Components/PestIdentification";
+import FarmerDashboard from "../Components/FarmerDashboard";
 
-const PestIdentificationPage: React.FC = () => {
+const FarmerDashboardPage = () => {
   return (
     <div
       className="min-vh-100 d-flex flex-column"
@@ -14,12 +12,12 @@ const PestIdentificationPage: React.FC = () => {
       }}
     >
       <HomeHeader />
-      <main className="flex-grow-1">
-        <PestIdentification />
+      <main className="container py-4 flex-grow-1">
+        <FarmerDashboard />
       </main>
       <HomeFooter />
     </div>
   );
 };
 
-export default PestIdentificationPage;
+export default FarmerDashboardPage;
