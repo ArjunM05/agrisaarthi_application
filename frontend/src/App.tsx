@@ -16,14 +16,18 @@ import SupplierDashboardPage from "./pages/SupplierDashboardPage";
 import InventoryPage from "./pages/InventoryPage";
 import RoleRedirect from "./Components/RoleRedirect";
 import RegistrationPage from "./pages/RegistrationPage";
+import ProfilePage from "./pages/ProfileSectionPage";
+import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 
 const App = () => {
+  const userType = localStorage.getItem("user_type");
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<RoleRedirect />} />
         <Route path="/registration" element={<RegistrationPage />} />
+        <Route path={`/${userType}/profile`} element={<ProfilePage />} />
         {/* <Route
           path="/supplier-registration"
           element={<SupplierRegistrationPage />}
@@ -36,6 +40,7 @@ const App = () => {
           />
           {/* <Route path="agribot" element={<AgriBotPage />} /> */}
           <Route path="pesticide" element={<PesticidesPage />} />
+          <Route path="supplier-history" element={<SupplierHistoryPage />} />
         </Route>
         {/* <Route path="/home" element={<FarmerDashboardPage />} />
         <Route

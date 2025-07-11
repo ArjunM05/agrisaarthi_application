@@ -1,7 +1,8 @@
 import logo from "../assets/logo-1.png";
-import { Navbar, Nav, Container } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { PersonCircle } from "react-bootstrap-icons";
+import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
 
 const SupplierHeader = () => {
   const navigate = useNavigate();
@@ -10,6 +11,9 @@ const SupplierHeader = () => {
     localStorage.removeItem("user_email");
     navigate("/login");
   };
+
+  const userRole = localStorage.getItem("user_type");
+
   return (
     <div>
       <header className=" w-100 bg-white shadow-sm fixed-top "></header>
@@ -53,9 +57,21 @@ const SupplierHeader = () => {
               <Nav.Link as={NavLink} to="/contact">
                 Contact Us
               </Nav.Link>
-              <Nav.Link as={NavLink} to="/login" onClick={handleLogout}>
-                Logout
-              </Nav.Link>
+            </Nav>
+            <Nav className="ms-auto">
+              <NavDropdown
+                title={<PersonCircle size={24} />}
+                id="profile-dropdown"
+                align="end"
+              >
+                <NavDropdown.Item as={NavLink} to={`/${userRole}/profile`}>
+                  Profile
+                </NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item onClick={handleLogout}>
+                  Logout
+                </NavDropdown.Item>
+              </NavDropdown>
             </Nav>
           </Navbar.Collapse>
         </Container>

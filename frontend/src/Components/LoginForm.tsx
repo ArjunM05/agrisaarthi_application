@@ -60,6 +60,9 @@ const LoginForm = () => {
         // Store user type in localStorage
         localStorage.setItem("user_type", data.role);
         localStorage.setItem("user_email", email);
+        localStorage.setItem("user_id", data.id);
+        localStorage.setItem("user_name", data.name);
+        localStorage.setItem("user_district", data.district);
 
         showToast("Login Successful", data.message);
 

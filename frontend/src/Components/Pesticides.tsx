@@ -1,7 +1,7 @@
 // src/Components/Pesticides.tsx
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "../utils/supabase";
+import supabase from "../utils/supabase";
 import SupplierCard from "./SupplierCard";
 
 type PesticideOption = {

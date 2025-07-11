@@ -1,21 +1,27 @@
 import logo from "../assets/logo-1.png";
-import { Navbar, Nav, Container } from "react-bootstrap";
+import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { PersonCircle } from "react-bootstrap-icons";
+
 const HomeHeader = () => {
   const navigate = useNavigate();
+
   const handleLogout = () => {
     localStorage.removeItem("user_type");
     localStorage.removeItem("user_email");
     navigate("/login");
   };
 
+  const userRole = localStorage.getItem("user_type") || "farmer"; // fallback
+  const homeLink = `/${userRole}`;
+
   return (
     <div>
       <header className=" w-100 bg-white shadow-sm fixed-top"></header>
       <Navbar expand="lg">
         <Container>
-          <Navbar.Brand as={NavLink} to="/farmer">
+          <Navbar.Brand as={NavLink} to={homeLink}>
             <div className="d-flex align-items-center">
               <img
                 src={logo}
@@ -29,33 +35,35 @@ const HomeHeader = () => {
               </div>
             </div>
           </Navbar.Brand>
+
           <Navbar.Toggle aria-controls="navbar-nav" />
-          <Navbar.Collapse
-            id="navbar-nav"
-            className="d-flex justify-content-center"
-          >
-            <Nav className="w-100 nav nav-tabs nav-fill d-flex justify-content-evenly ">
-              <Nav.Link as={NavLink} to="/farmer/pest-identification">
+          <Navbar.Collapse id="navbar-nav" className="justify-content-between">
+            <Nav className="nav nav-tabs nav-fill w-75 justify-content-evenly">
+              <Nav.Link as={NavLink} to={`/${userRole}/pest-identification`}>
                 Pest Identification
               </Nav.Link>
-              {/* <Nav.Link as={NavLink} to="/weather">
-                Weather
-              </Nav.Link> */}
-              {/* <Nav.Link as={NavLink} to="/farmer/agribot">
-                AgriBot
-              </Nav.Link> */}
-              <Nav.Link as={NavLink} to="/farmer/pesticide">
+              <Nav.Link as={NavLink} to={`/${userRole}/pesticide`}>
                 Pesticide
               </Nav.Link>
-              {/* <Nav.Link as={NavLink} to="/about">
-                About Us
-              </Nav.Link> */}
               <Nav.Link as={NavLink} to="/contact">
                 Contact Us
               </Nav.Link>
-              <Nav.Link as={NavLink} to="/login" onClick={handleLogout}>
-                Logout
-              </Nav.Link>
+            </Nav>
+
+            <Nav className="ms-auto">
+              <NavDropdown
+                title={<PersonCircle size={24} />}
+                id="profile-dropdown"
+                align="end"
+              >
+                <NavDropdown.Item as={NavLink} to={`/${userRole}/profile`}>
+                  Profile
+                </NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item onClick={handleLogout}>
+                  Logout
+                </NavDropdown.Item>
+              </NavDropdown>
             </Nav>
           </Navbar.Collapse>
         </Container>
