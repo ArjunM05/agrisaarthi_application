@@ -78,7 +78,7 @@ def register_user(name: str, email: str, phone: str, password: str, user_type: s
 
 def login_user(email: str, password: str) -> dict:
     try:
-        result = db.table('users').select('password, role').eq('email', email).limit(1).execute()
+        result = db.table('users').select('id, name, phone, password, role').eq('email', email).limit(1).execute()
         if not result.data:
             return {"status": "error", "code": 1, "message": "Invalid email or password"}
 
@@ -86,6 +86,10 @@ def login_user(email: str, password: str) -> dict:
         if bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
             return {
                 "status": "success",
+                "user_id": user['id'],
+                "name": user['name'],
+                "email": email,
+                "phone": user['phone'],
                 "role": user['role'],
                 "message": f"User '{email}' logged in successfully"
             }
@@ -111,7 +115,6 @@ def update_user_profile(user_id: int, name: str, phone: str, location: str) -> b
         print(f"Error: User with ID {user_id} not found.")
         return False
 
-    # Check for phone uniqueness (if phone is being updated)
     if phone is not None:
         phone_result = db.table('users').select('id').eq('phone', phone).neq('id', user_id).limit(1).execute()
         if phone_result.data:
