@@ -572,7 +572,7 @@ def get_supplier_details(pesticide_name: str):
         print(f"Error retrieving supplier details: {e}")
         return []
 
-def call_supplier(supplier_id: int):
+def call_supplier(supplier_id: int, farmer_id: int, pesticide: str):
     """
     Returns the phone number of the supplier with the given supplier_id.
 
@@ -581,10 +581,17 @@ def call_supplier(supplier_id: int):
     """
     try:
         result = db.table('users').select('phone').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
-        if result.data:
-            return result.data[0]['phone']
-        print(f"Error: Supplier with ID {supplier_id} not found.")
-        return None
+        if not result.data: 
+            print(f"Error: Supplier with ID {supplier_id} not found.")
+            return None
+        contact_details={
+            'farmer_id': farmer_id,
+            'supplier_id': supplier_id,
+            'pesticide_name': pesticide
+        }
+        db.table('suppliers_contacted').insert(contact_details).execute()
+        print(f"Supplier {supplier_id} contacted farmer {farmer_id} for pesticide {pesticide}.")
+        return result.data[0]['phone']
     except Exception as e:
         print(f"Error retrieving supplier phone: {e}")
         return None

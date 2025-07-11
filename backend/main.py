@@ -54,7 +54,7 @@ def update_profile_route(user_id):
 @app.route('/supplier_details/<int:supplier_id>', methods=['PUT'])
 def update_supplier_details_route(supplier_id):
     data = request.get_json()
-    shop_name = data.get('shopName')
+    shop_name = data.get('shop_name')
     address = data.get('address')
     latitude = data.get('latitude')
     longitude = data.get('longitude')
@@ -67,7 +67,7 @@ def update_supplier_details_route(supplier_id):
 @app.route('/farmer_details/<int:farmer_id>', methods=['PUT'])
 def update_farmer_details_route(farmer_id):
     data = request.get_json()
-    farm_size=data.get('farmSize')
+    farm_size=data.get('farm_size')
 
     if update_farmer_details(farmer_id, farm_size):
         return jsonify({"message": "Profile updated successfully"}), 200
@@ -103,7 +103,7 @@ def sms_log_route():
     user_phone = data.get('user_phone')
     query_type = data.get('query_type')
     message = data.get('message')
-    response = data.get('response') # Response can be optional
+    response = data.get('response')
 
     if log_sms_interaction(user_phone, query_type, message, response):
         return jsonify({"message": "SMS log recorded"}), 201
@@ -221,7 +221,9 @@ def supplier_details_route():
 def call_supplier_route():
     data = request.get_json()
     supplier_id = data.get('supplier_id')
-    phone = call_supplier(supplier_id)
+    farmer_id = data.get('farmer_id')
+    pesticide = data.get('pesticide')
+    phone = call_supplier(supplier_id,farmer_id,pesticide)
     if phone:
         return jsonify({'supplier_phone': phone}), 200
     else:
