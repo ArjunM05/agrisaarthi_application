@@ -11,7 +11,7 @@ cors=CORS(app,origins='*')
 
 #--------------------------------------------------------------------
 
-def register_user(name: str, email: str, phone: str, password: str, user_type: str, location: str) -> bool:
+def register_user(name: str, email: str, phone: str, password: str, user_type: str, location: str) -> dict:
     """
     Registers a new user in the system.
 
@@ -25,18 +25,18 @@ def register_user(name: str, email: str, phone: str, password: str, user_type: s
     """
     if not email or not password or not user_type:
         print("Error: Email, password, and user type are required for registration.")
-        return False
+        return {"status": "error", "code": 1, "message": "Email, password, and user type are required for registration"}
 
     # Check for existing user by email
     existing_email = db.table('users').select('id').eq('email', email).execute()
     if existing_email.data:
         print(f"Error: User with email '{email}' already exists.")
-        return False
+        return {"status": "error", "code": 2, "message": "User with this email already exists"}
     # Check for existing user by phone
     existing_phone = db.table('users').select('id').eq('phone', phone).execute()
     if existing_phone.data:
         print(f"Error: User with phone '{phone}' already exists.")
-        return False
+        return {"status": "error", "code": 3, "message": "User with this phone number already exists"}
 
     try:
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -48,52 +48,53 @@ def register_user(name: str, email: str, phone: str, password: str, user_type: s
             'role': user_type,
             'district': location
         }).execute()
-        if user_type.lower == 'farmer':
+        result_details = None
+        if user_type.lower() == 'farmer':
             result_details = db.table('farmer_details').insert({
-                'user_id': result.data[0]['id'],
+                'farmer_id': result.data[0]['id'],
                 'farm_size': 0
             }).execute()
-        elif user_type.lower == 'supplier':
+        elif user_type.lower() == 'supplier':
             result_details = db.table('supplier_details').insert({
-                'user_id': result.data[0]['id'],
+                'supplier_id': result.data[0]['id'],
                 'shop_name': '',
                 'address': '',
                 'latitude': 0,
-                'longitude': 0
+                'longitude': 0,
+                'approved': False,
+                'service_areas': []
             }).execute()
-        if result.data and result_details.data:
+        
+        if result.data and (result_details is None or result_details.data):
             print(f"User '{email}' registered successfully as {user_type}.")
-            return True
+            return {"status": "success", "code": 4, "message": "User registered successfully"}
         else:
             print(f"Error: Failed to insert user into database.")
-            return False
+            return {"status": "error", "code": 5, "message": "Failed to insert user into database"}
     except Exception as e:
         print(f"An unexpected error occurred during registration: {e}")
-        return False
+        return {"status": "error", "code": 6, "message": f"Error: {str(e)}"}
 
-def login_user(email: str, password: str) -> bool:
-    """
-    Authenticates a user based on email and password.
 
-    Args:
-        email (str): The user's email.
-        password (str): The plaintext password provided by the user.
-    """
+def login_user(email: str, password: str) -> dict:
     try:
-        result = db.table('users').select('password').eq('email', email).limit(1).execute()
+        result = db.table('users').select('password, role').eq('email', email).limit(1).execute()
         if not result.data:
-            print(f"Login failed: Invalid email.")
-            return False
+            return {"status": "error", "code": 1, "message": "Invalid email or password"}
+
         user = result.data[0]
         if bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
-            print(f"User '{email}' logged in successfully.")
-            return True
+            return {
+                "status": "success",
+                "role": user['role'],
+                "message": f"User '{email}' logged in successfully"
+            }
         else:
-            print(f"Login failed: Invalid password.")
-            return False
+            return {"status": "error", "code": 2, "message": "Invalid email or password"}
+
     except Exception as e:
-        print(f"An error occurred during login: {e}")
-        return False
+        return {"status": "error", "code": 3, "message": f"Error: {str(e)}"}
+
 
 def update_user_profile(user_id: int, name: str, phone: str, location: str) -> bool:
     """
@@ -438,18 +439,164 @@ def get_last_4_pest_images(user_id) -> list:
         return [row['image_url'] for row in result.data]
     return []
 
-def get_last_contacted_supplier(user_id):
+
+def get_pest_history(user_id: int) -> list:
     """
-    Retrieves the last contacted supplier for a user from sms_logs.
+    Retrieves the pest detection history for a user.
 
     Args:
         user_id (int): The user's ID.
     """
-    # Assuming 'query_type' or 'message' can be used to filter supplier contacts
-    result = db.table('sms_logs').select('user_phone').eq('user_id', user_id).eq('query_type', 'supplier_contact').order('timestamp', desc=True).limit(1).execute()
-    if result.data:
-        return result.data[0]['user_phone']
-    return None
+    try:
+        result = db.table('pest_inference_results').select('image_url, pest_name, pesticide, dosage').eq('user_id', user_id).order('prediction_time', desc=True).execute()
+        if result.data:
+            return [
+                {
+                    'img_url': row['image_url'],
+                    'pest_name': row['pest_name'],
+                    'pesticide':row['pesticide'],
+                    'dosage': row['dosage']
+                }
+                for row in result.data
+            ]
+        return []
+    except Exception as e:
+        print(f"Error retrieving pest history: {e}")
+        return []
+
+def get_last_contacted_suppliers(farmer_id: int) -> list:
+    """
+    Retrieves all suppliers contacted by a farmer.
+    Args:
+        farmer_id (int): The farmer's ID.
+    """
+    try:
+        result = db.table('suppliers_contacted').select('supplier_id, pesticide_name, contact_time').eq('farmer_id', farmer_id).order('timestamp', desc=True).execute()
+        if not result.data:
+            return []
+        contacts = []
+        for row in result.data:
+            supplier_id = row.get('supplier_id')
+            supplier_result = db.table('users').select('name, phone, email').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
+            if supplier_result.data:
+                supplier = supplier_result.data[0]
+                contacts.append({
+                    'supplier_id': supplier_id,
+                    'supplier_name': supplier['name'],
+                    'pesticide': row.get('pesticide_name'),
+                    'contact_time': row.get('contact_time')
+                })
+        return contacts
+    except Exception as e:
+        print(f"Error retrieving contacted suppliers: {e}")
+        return []
+
+def get_supplier_inventory(supplier_id: int) -> list:
+    """
+    Retrieves supplier inventory information.
+
+    Args:
+        supplier_id (int): The supplier's ID.
+    """
+    try:
+        result = db.table('pesticide_listings').select('*').eq('supplier_id', supplier_id).execute()
+        
+        if result.data:
+            return result.data
+        return []
+    except Exception as e:
+        print(f"Error retrieving supplier inventory: {e}")
+        return []
+
+def update_inventory(price: float, stock: int, pesticide: str, supplier_id: int) -> bool:
+    """
+    Updates the inventory information of the supplier.
+
+    Args:
+        price (float): The price of the pesticide.
+        stock (int): The available stock quantity.
+        pesticide (str): The name of the pesticide.
+        supplier_id (int): The supplier's ID.
+    """
+    try:
+        supplier_result = db.table('users').select('id').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
+        if not supplier_result.data:
+            print(f"Error: Supplier with ID {supplier_id} not found.")
+            return False
+
+        result = db.table('pesticide_listings').upsert({
+            'supplier_id': supplier_id,
+            'pesticide': pesticide,
+            'price': price,
+            'stock': stock
+        }, on_conflict="supplier_id,pesticide").execute()
+        
+        if result.data:
+            print(f"Inventory updated successfully for supplier ID {supplier_id}.")
+            return True
+        else:
+            print(f"Error: Failed to update inventory in database.")
+            return False
+    except Exception as e:
+        print(f"An unexpected error occurred during inventory update: {e}")
+        return False
+
+def get_user_info(user_id: int) -> dict | None:
+    """
+    Retrieves all user info and role-specific details.
+    Args:
+        user_id (int): The user's ID.
+    """
+    try:
+        user_result = db.table('users').select('*').eq('id', user_id).limit(1).execute()
+        if not user_result.data:
+            return None
+        user = user_result.data[0]
+        role = user.get('role', '').lower()
+        details = None
+        if role == 'farmer':
+            details_result = db.table('farmer_details').select('*').eq('farmer_id', user_id).limit(1).execute()
+            if details_result.data:
+                details = details_result.data[0]
+            user['details'] = details
+        elif role == 'supplier':
+            details_result = db.table('supplier_details').select('*').eq('supplier_id', user_id).limit(1).execute()
+            if details_result.data:
+                details = details_result.data[0]
+            user['details'] = details
+        elif role == 'admin':
+            details_result = db.table('admin_details').select('*').eq('admin_id', user_id).limit(1).execute()
+            if details_result.data:
+                details = details_result.data[0]
+            user['details'] = details
+        return user
+    except Exception as e:
+        print(f"Error retrieving user info: {e}")
+        return None
+
+def delete_account(user_id: int) -> bool:
+    """
+    Deletes a user account and related details.
+    Args:
+        user_id (int): The user's ID.
+    """
+    try:
+        user_result = db.table('users').select('id, role').eq('id', user_id).limit(1).execute()
+        if not user_result.data:
+            return False
+        role = user_result.data[0].get('role', '').lower()
+        if role == 'farmer':
+            db.table('farmer_details').delete().eq('farmer_id', user_id).execute()
+        elif role == 'supplier':
+            db.table('supplier_details').delete().eq('supplier_id', user_id).execute()
+        elif role == 'admin':
+            db.table('admin_details').delete().eq('admin_id', user_id).execute()
+        
+        db.table('users').delete().eq('id', user_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error deleting account: {e}")
+        return False
 
 #-----------------------------------------------------------------------------------------------------------
 
@@ -464,23 +611,21 @@ def register_route():
     password = data.get('password')
     user_type = data.get('role')
     location = data.get('district')
-
-    if register_user(name, email, phone, password, user_type, location):
-        return jsonify({"message": "User registered successfully"}), 201
+    res = register_user(name, email, phone, password, user_type, location)
+   
+    if res["status"] == "success":
+        return jsonify({"message": res["message"]}), 201
     else:
-        return jsonify({"error": "Registration failed"}), 400
+        return jsonify({"error": res["message"]}), 400
 
 @app.route('/login', methods=['POST'])
 def login_route():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
-
-    if login_user(email, password):
-        # Session token???
-        return jsonify({"message": "Login successful"}), 200
-    else:
-        return jsonify({"error": "Invalid credentials"}), 401
+    response = login_user(email, password)
+    status_code = 200 if response["status"] == "success" else 401
+    return jsonify(response), status_code
 
 @app.route('/profile/<int:user_id>', methods=['PUT'])
 def update_profile_route(user_id):
@@ -621,15 +766,53 @@ def last_pest_images_route():
     images = get_last_4_pest_images(user_id)
     return jsonify({'images': images}), 200
 
-@app.route('/last_supplier', methods=['POST'])
-def last_supplier_route():
-    data = request.get_json()
-    user_id = data.get('user_id')
-    supplier = get_last_contacted_supplier(user_id)
-    if supplier:
-        return jsonify({'supplier': supplier}), 200
+@app.route('/pest_history/<user_id>', methods=['GET'])
+def pest_history_route(user_id):
+    history = get_pest_history(user_id)
+    return jsonify({'history': history}), 200
+
+@app.route('/last_contacted_suppliers/<farmer_id>', methods=['GET'])
+def last_contacted_route(farmer_id):
+    contacts = get_last_contacted_suppliers(farmer_id)
+    if contacts:
+        return jsonify({'contacts': contacts}), 200
     else:
-        return jsonify({'error': 'No supplier found'}), 404
+        return jsonify({'error': 'No contact information found'}), 404
+
+@app.route('/supplier_inventory/<supplier_id>', methods=['GET'])
+def supplier_inventory_route(supplier_id):
+    inventory = get_supplier_inventory(supplier_id)
+    if inventory:
+        return jsonify({'inventory': inventory}), 200
+    else:
+        return jsonify({'error': 'Inventory not found'}), 404
+
+@app.route('/update_inventory/<supplier_id>', methods=['PUT'])
+def update_inventory_route(supplier_id):
+    data = request.get_json()
+    price = data.get('price')
+    stock = data.get('stock')
+    pesticide = data.get('pesticide')
+
+    if update_inventory(price, stock, pesticide, supplier_id):
+        return jsonify({"message": "Inventory updated successfully"}), 200
+    else:
+        return jsonify({"error": "Inventory update failed"}), 400
+
+@app.route('/user_info/<user_id>', methods=['GET'])
+def user_info_route(user_id):
+    user_info = get_user_info(int(user_id))
+    if user_info:
+        return jsonify(user_info), 200
+    else:
+        return jsonify({'error': 'User not found'}), 404
+
+@app.route('/delete_account/<user_id>', methods=['DELETE'])
+def delete_account_route(user_id):
+    if delete_account(int(user_id)):
+        return jsonify({'message': 'Account deleted'}), 200
+    else:
+        return jsonify({'error': 'Account deletion failed'}), 400
 
 #-------------------------------------------------------------------------------------------------
 

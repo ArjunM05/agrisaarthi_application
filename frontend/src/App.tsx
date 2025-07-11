@@ -3,11 +3,13 @@ import LoginPage from "./pages/LoginPage";
 import FarmerRegistrationPage from "./pages/FarmerRegistrationPage";
 import SupplierRegistrationPage from "./pages/SupplierRegistrationPage";
 import NotFound from "./pages/NotFound";
-import "./App.css";
 import LandingPage from "./pages/LandingPage";
 import PestIdentificationPage from "./pages/PestIdentificationPage";
 import AgriBotPage from "./pages/AgriBotPage";
 
+import "./App.css";
+
+const baseURL = "http:localhost:5000";
 
 const App = () => {
   return (
