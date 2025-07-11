@@ -1,7 +1,7 @@
 // src/components/SupplierInventory.tsx
 import { useEffect, useState } from "react";
 import { Modal, Button, Form, Card } from "react-bootstrap";
-import { supabase } from "../utils/supabase";
+import supabase from "../utils/supabase";
 
 interface PesticideOption {
   pest: string;

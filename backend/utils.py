@@ -70,7 +70,7 @@ def register_user(name: str, email: str, phone: str, password: str, user_type: s
 
 def login_user(email: str, password: str):
     try:
-        result = db.table('users').select('id, name, phone, password, role').eq('email', email).limit(1).execute()
+        result = db.table('users').select('id, name, phone, password, role, district').eq('email', email).limit(1).execute()
         if not result.data:
             return {"status": "error", "code": 1, "message": "Invalid email or password"}
 
@@ -83,6 +83,7 @@ def login_user(email: str, password: str):
                 "email": email,
                 "phone": user['phone'],
                 "role": user['role'],
+                "district": user['district'],
                 "message": f"User '{email}' logged in successfully"
             }
         else:

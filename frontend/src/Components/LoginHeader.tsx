@@ -1,12 +1,6 @@
-import { useState } from "react";
 import logo from "../assets/logo-1.png";
-import { Dropdown } from "react-bootstrap";
 
 const LoginHeader = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState("English | A");
-  const handleLanguageSelect = (language: string) => {
-    setSelectedLanguage(language);
-  };
   return (
     <header className="w-100 bg-white shadow-sticky-top">
       <div className="container-fluid">
@@ -15,32 +9,6 @@ const LoginHeader = () => {
             <h1 className="h2 h1-md fw-bold text-dark mb-0">
               WELCOME TO AGROSAARTHI!
             </h1>
-          </div>
-
-          <div className="dropdown ms-auto col-auto">
-            <Dropdown className="ms-auto">
-              <Dropdown.Toggle variant="outline-success" id="dropdown-basic">
-                {selectedLanguage}
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu align="end">
-                <Dropdown.Item
-                  onClick={() => handleLanguageSelect("English | A")}
-                >
-                  English | A
-                </Dropdown.Item>
-                <Dropdown.Item
-                  onClick={() => handleLanguageSelect("हिंदी | अ")}
-                >
-                  हिंदी | अ
-                </Dropdown.Item>
-                <Dropdown.Item
-                  onClick={() => handleLanguageSelect("தமிழ் | அ")}
-                >
-                  தமிழ் | அ
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
           </div>
 
           <div className="col-auto">
