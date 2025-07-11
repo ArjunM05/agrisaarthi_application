@@ -544,6 +544,51 @@ def update_inventory(price: float, stock: int, pesticide: str, supplier_id: int)
         print(f"An unexpected error occurred during inventory update: {e}")
         return False
 
+def get_supplier_details(pesticide_name: str) -> list:
+    """
+    Returns a list of suppliers who have the given pesticide, including supplier_id, supplier_name, price, and stock.
+
+    Args:
+        pesticide_name (str): The name of the pesticide.
+    """
+    try:
+        result = db.table('pesticide_listings').select('supplier_id, price, stock').eq('pesticide', pesticide_name).execute()
+        if not result.data:
+            return []
+        suppliers = []
+        for row in result.data:
+            supplier_id = row.get('supplier_id')
+            supplier_result = db.table('users').select('name').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
+            if supplier_result.data:
+                supplier = supplier_result.data[0]
+                suppliers.append({
+                    'supplier_id': supplier_id,
+                    'supplier_name': supplier['name'],
+                    'price': row.get('price'),
+                    'stock': row.get('stock')
+                })
+        return suppliers
+    except Exception as e:
+        print(f"Error retrieving supplier details: {e}")
+        return []
+
+def call_supplier(supplier_id: int) -> str | None:
+    """
+    Returns the phone number of the supplier with the given supplier_id.
+
+    Args:
+        supplier_id (int): The supplier's ID.
+    """
+    try:
+        result = db.table('users').select('phone').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
+        if result.data:
+            return result.data[0]['phone']
+        print(f"Error: Supplier with ID {supplier_id} not found.")
+        return None
+    except Exception as e:
+        print(f"Error retrieving supplier phone: {e}")
+        return None
+
 def get_user_info(user_id: int) -> dict | None:
     """
     Retrieves all user info and role-specific details.
@@ -801,6 +846,23 @@ def update_inventory_route(supplier_id):
         return jsonify({"message": "Inventory updated successfully"}), 200
     else:
         return jsonify({"error": "Inventory update failed"}), 400
+
+@app.route('/supplier_details', methods=['POST'])
+def supplier_details_route():
+    data = request.get_json()
+    pesticide_name = data.get('pesticide_name')
+    suppliers = get_supplier_details(pesticide_name)
+    return jsonify({'suppliers': suppliers}), 200
+
+@app.route('/call_supplier', methods=['POST'])
+def call_supplier_route():
+    data = request.get_json()
+    supplier_id = data.get('supplier_id')
+    phone = call_supplier(supplier_id)
+    if phone:
+        return jsonify({'supplier_phone': phone}), 200
+    else:
+        return jsonify({'error': 'Supplier not found'}), 404
 
 @app.route('/user_info/<user_id>', methods=['GET'])
 def user_info_route(user_id):
