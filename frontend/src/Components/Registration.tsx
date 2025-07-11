@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Toast, ToastContainer } from "react-bootstrap";
 import { useNavigate } from "react-router";
 
-const FarmerRegistration = () => {
+const Registration = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     district: "",
     password: "",
+    role: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [toastShow, setToastShow] = useState(false);
@@ -44,7 +45,8 @@ const FarmerRegistration = () => {
       !formData.email ||
       !formData.phone ||
       !formData.district ||
-      !formData.password
+      !formData.password ||
+      !formData.role
     ) {
       showToast(
         "Incomplete Form",
@@ -73,7 +75,7 @@ const FarmerRegistration = () => {
           email: formData.email,
           phone: formData.phone,
           password: formData.password,
-          role: "farmer",
+          role: formData.role,
           district: formData.district,
         }),
       });
@@ -81,14 +83,15 @@ const FarmerRegistration = () => {
       if (response.ok) {
         showToast(
           "Registration Successful",
-          "Welcome to AgriSaarthi! Your farmer account has been created. Please login.",
+          `Welcome to AgriSaarthi! Your account has been created. Please login.`,
           "success"
         );
         setTimeout(() => navigate("/login"), 1500);
       } else {
         showToast(
           "Registration Failed",
-          data.error || "An error occurred during registration.",
+          `Error Code: ${data.error}` ||
+            "An error occurred during registration.",
           "danger"
         );
       }
@@ -115,7 +118,7 @@ const FarmerRegistration = () => {
       >
         <div className="card-body p-4">
           <div className="text-center mb-4">
-            <h2 className="h3 fw-bold text-dark mb-0">FARMER REGISTRATION</h2>
+            <h2 className="h3 fw-bold text-dark mb-0">REGISTRATION</h2>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -204,17 +207,37 @@ const FarmerRegistration = () => {
               />
             </div>
 
+            <div className="mb-3">
+              <label
+                htmlFor="role"
+                className="form-label text-uppercase fw-medium text-muted small"
+              >
+                ROLE*
+              </label>
+              <select
+                id="role"
+                value={formData.role}
+                onChange={(e) => handleInputChange("role", e.target.value)}
+                className="form-control"
+                required
+              >
+                <option value="" disabled hidden></option>
+                <option value="farmer">Farmer</option>
+                <option value="supplier">Supplier</option>
+              </select>
+            </div>
+
             <div className="row justify-content-md-center">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-success btn-lg w-100 rounded-pill fw-medium"
+                className="btn btn-success btn-lg w-100 rounded-pill fw-medium mb-2"
               >
                 {isLoading ? "Registering..." : "REGISTER"}
               </button>
               <button
                 type="button"
-                className="btn btn-outline-secondary btn-sm col-3 rounded-pill"
+                className="btn btn-outline-secondary btn-lg w-50 col-3 rounded-pill"
                 onClick={() => handleBack()}
               >
                 Go Back
@@ -246,4 +269,4 @@ const FarmerRegistration = () => {
   );
 };
 
-export default FarmerRegistration;
+export default Registration;

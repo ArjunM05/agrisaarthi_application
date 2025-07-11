@@ -1,11 +1,11 @@
-// src/pages/PestIdentificationPage.tsx
+// src/pages/PesticidesPage.tsx
 
 import React from "react";
 import HomeHeader from "../Components/HomeHeader";
 import HomeFooter from "../Components/HomeFooter";
-import PestIdentification from "../Components/PestIdentification";
+import Pesticides from "../Components/Pesticides";
 
-const PestIdentificationPage: React.FC = () => {
+const PesticidesPage: React.FC = () => {
   return (
     <div
       className="min-vh-100 d-flex flex-column"
@@ -15,11 +15,11 @@ const PestIdentificationPage: React.FC = () => {
     >
       <HomeHeader />
       <main className="flex-grow-1">
-        <PestIdentification />
+        <Pesticides />
       </main>
       <HomeFooter />
     </div>
   );
 };
 
-export default PestIdentificationPage;
+export default PesticidesPage;
