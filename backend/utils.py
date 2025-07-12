@@ -1,8 +1,24 @@
 from decimal import Decimal
 import bcrypt
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+import random
+import string
+from dotenv import load_dotenv
+import os
+from datetime import datetime, timedelta
+
 from config import db
 
+load_dotenv()
 
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_SENDER_EMAIL = os.getenv("SENDGRID_SENDER_EMAIL")
+
+if not SENDGRID_API_KEY:
+    raise ValueError("SENDGRID_API_KEY not found in environment variables.")
+if not SENDGRID_SENDER_EMAIL:
+    raise ValueError("SENDGRID_SENDER_EMAIL not found in environment variables.")
 
 def register_user(name: str, email: str, phone: str, password: str, user_type: str, location: str):
     """
@@ -93,7 +109,7 @@ def login_user(email: str, password: str):
         return {"status": "error", "code": 3, "message": f"Error: {str(e)}"}
 
 
-def update_user_profile(user_id: int, name: str, location: str):
+def update_user_profile(user_id: str, name: str, location: str):
     """
     Updates the profile information for a given user.
 
@@ -128,7 +144,7 @@ def update_user_profile(user_id: int, name: str, location: str):
         print(f"An unexpected error occurred during profile update: {e}")
         return False
 
-def update_supplier_details(supplier_id: int, shop_name: str, address: str, latitude: Decimal, longitude: Decimal):
+def update_supplier_details(supplier_id: str, shop_name: str, address: str, latitude: Decimal, longitude: Decimal):
     """
     Updates the supplier information.
 
@@ -169,7 +185,7 @@ def update_supplier_details(supplier_id: int, shop_name: str, address: str, lati
         print(f"An unexpected error occurred during supplier profile update: {e}")
         return False
 
-def update_farmer_details(farmer_id: int, farm_size: Decimal):
+def update_farmer_details(farmer_id: str, farm_size: Decimal):
     """
     Updates the farmer information.
 
@@ -202,7 +218,7 @@ def update_farmer_details(farmer_id: int, farm_size: Decimal):
         print(f"An unexpected error occurred during farmer profile update: {e}")
         return False
     
-def update_admin_details(admin_id: int, admin_level: int, department: str):
+def update_admin_details(admin_id: str, admin_level: int, department: str):
     """
     Updates the admin information.
 
@@ -238,7 +254,7 @@ def update_admin_details(admin_id: int, admin_level: int, department: str):
         print(f"An unexpected error occurred during admin profile update: {e}")
         return False
 
-def submit_feedback(user_id: int, rating: int, comments: str):
+def submit_feedback(user_id: str, rating: int, comments: str):
     """
     Submits new feedback or a testimonial.
 
@@ -298,7 +314,7 @@ def log_sms_interaction(user_phone: str, query_type: str, message: str, response
         print(f"Error logging SMS interaction: {e}")
         return False
 
-def log_pest_detection(user_id: int, image_url: str, pest_name: str, confidence: float, dosage: int, xai_path: str = ""):
+def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence: float, dosage: int, xai_path: str = ""):
     """
     Logs the results of a pest detection inference.
 
@@ -413,7 +429,7 @@ def get_user_name(user_id=None, email=None):
         return result.data[0]['name']
     return None
 
-def get_last_4_pest_images(user_id):
+def get_last_4_pest_images(user_id: str):
     """
     Retrieves the image URLs of the last 4 pests searched by a user.
 
@@ -426,7 +442,7 @@ def get_last_4_pest_images(user_id):
     return []
 
 
-def get_pest_history(user_id: int):
+def get_pest_history(user_id: str):
     """
     Retrieves the pest detection history for a user.
 
@@ -450,7 +466,7 @@ def get_pest_history(user_id: int):
         print(f"Error retrieving pest history: {e}")
         return []
 
-def get_last_contacted_suppliers(farmer_id: int):
+def get_last_contacted_suppliers(farmer_id: str):
     """
     Retrieves all suppliers contacted by a farmer.
     Args:
@@ -486,7 +502,7 @@ def get_last_contacted_suppliers(farmer_id: int):
         print(f"Error retrieving contacted suppliers: {e}")
         return []
 
-def get_supplier_inventory(supplier_id: int):
+def get_supplier_inventory(supplier_id: str):
     """
     Retrieves supplier inventory information.
 
@@ -503,7 +519,7 @@ def get_supplier_inventory(supplier_id: int):
         print(f"Error retrieving supplier inventory: {e}")
         return []
 
-def update_inventory(price: float, stock: int, pesticide: str, supplier_id: int):
+def update_inventory(price: float, stock: int, pesticide: str, supplier_id: str):
     """
     Updates the inventory information of the supplier.
 
@@ -573,7 +589,7 @@ def get_supplier_details(pesticide_name: str):
         print(f"Error retrieving supplier details: {e}")
         return []
 
-def call_supplier(supplier_id: int, farmer_id: int, pesticide: str):
+def call_supplier(supplier_id: str, farmer_id: str, pesticide: str):
     """
     Returns the phone number of the supplier with the given supplier_id.
 
@@ -597,7 +613,7 @@ def call_supplier(supplier_id: int, farmer_id: int, pesticide: str):
         print(f"Error retrieving supplier phone: {e}")
         return None
 
-def get_user_info(user_id: int):
+def get_user_info(user_id: str):
     """
     Retrieves all user info and role-specific details.
     Args:
@@ -630,7 +646,7 @@ def get_user_info(user_id: int):
         print(f"Error retrieving user info: {e}")
         return None
 
-def delete_account(user_id: int):
+def delete_account(user_id: str):
     """
     Deletes a user account and related details.
     Args:
@@ -653,3 +669,139 @@ def delete_account(user_id: int):
     except Exception as e:
         print(f"Error deleting account: {e}")
         return False
+
+def update_password(old_password: str, new_password: str, user_id: str):
+    """
+    Updates the password for a user after verifying the old password.
+    
+    Args:
+        old_password (str): The current password to verify.
+        new_password (str): The new password to set.
+        user_id (int): The user's ID.
+    """
+    try:
+        result = db.table('users').select('password').eq('id', user_id).limit(1).execute()
+        if not result.data:
+            return {"status": "error", "message": "User not found"}
+        
+        current_password = result.data[0]['password']
+        
+        if not bcrypt.checkpw(old_password.encode('utf-8'), current_password.encode('utf-8')):
+            return {"status": "error", "message": "Old password is incorrect"}
+        
+        hashed_new_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        update_result = db.table('users').update({'password': hashed_new_password}).eq('id', user_id).execute()
+        
+        if update_result.data:
+            return {"status": "success", "message": "Password updated successfully"}
+        else:
+            return {"status": "error", "message": "Failed to update password"}
+            
+    except Exception as e:
+        print(f"Error updating password: {e}")
+        return {"status": "error", "message": f"Error: {str(e)}"}
+
+
+
+def generate_otp():
+    """Generate a 6-digit OTP"""
+    return ''.join(random.choices(string.digits, k=6))
+
+def send_otp_email(user_id: str, email: str):
+    """
+    Send OTP to user's email.
+
+    Args:
+        user_id (str): The user's ID.
+        email (str): The user's email address.
+    """
+    try:
+        otp_code = generate_otp()
+        expires_at = datetime.now() + timedelta(minutes=5)
+        db.table('otp_storage').insert({
+            'user_id': user_id,
+            'email': email,
+            'otp': otp_code,
+            'expiry_time': expires_at.isoformat()
+        }).execute()
+        print(f"Stored OTP for {email}: {otp_code}, expires at {expires_at}")
+
+        message = Mail(
+            from_email=SENDGRID_SENDER_EMAIL,
+            to_emails=email,
+            subject='Your One-Time Password (OTP) for AgroSaarthi',
+            html_content=f'<strong>Your OTP is: {otp_code}</strong><br>This code is valid for 5 minutes. Do not share it with anyone.'
+        )
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(f"OTP email sent to {email} with status code: {response.status_code}")
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
+def forgot_password(email: str):
+    """
+    Initiates the forgot password process by sending OTP to user's email.
+    
+    Args:
+        email (str): The user's email address.
+    """
+    try:
+        user_result = db.table('users').select('id, name').eq('email', email).limit(1).execute()
+        if not user_result.data:
+            return {"status": "error", "message": "Email not found"}
+        
+        user_id = user_result.data[0]['id']
+        
+        if send_otp_email(user_id, email):
+            return {"status": "success", "message": f"OTP sent to {email}"}
+        else:
+            return {"status": "error", "message": "Failed to send OTP"}
+            
+    except Exception as e:
+        print(f"Error in forgot password: {e}")
+        return {"status": "error", "message": f"Error: {str(e)}"}
+
+def verify_otp_and_reset_password(email: str, otp: str, new_password: str):
+    """
+    Verifies OTP and resets password if valid.
+    
+    Args:
+        email (str): The user's email address.
+        otp (str): The OTP entered by user.
+        new_password (str): The new password to set.
+    """
+    try:
+        user_result = db.table('users').select('id').eq('email', email).limit(1).execute()
+        if not user_result.data:
+            return {"status": "error", "message": "Email not found"}
+        
+        user_id = user_result.data[0]['id']
+        
+        otp_result = db.table('otp_storage').select('*').eq('user_id', user_id).eq('otp', otp).eq('used','false').lt('expiry_time', datetime.now().isoformat()).limit(1).execute()
+        
+        if not otp_result.data:
+            return {"status": "error", "message": "Invalid OTP"}
+        
+        stored_otp = otp_result.data[0]
+        expiry_time = datetime.fromisoformat(stored_otp['expiry_time'])
+        
+        if datetime.now() > expiry_time:
+            return {"status": "error", "message": "OTP has expired"}
+        
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        update_result = db.table('users').update({'password': hashed_password}).eq('id', user_id).execute()
+        
+        if not update_result.data:
+            return {"status": "error", "message": "Failed to update password"}
+        
+        db.table('otp_storage').update({'used': 'true'}).eq('user_id', user_id).eq('otp', otp).execute()
+        
+        return {"status": "success", "message": "Password reset successfully"}
+        
+    except Exception as e:
+        print(f"Error in verify OTP and reset password: {e}")
+        return {"status": "error", "message": f"Error: {str(e)}"}

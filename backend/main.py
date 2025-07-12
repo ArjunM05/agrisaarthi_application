@@ -5,8 +5,9 @@ from config import app
 from utils import (
     register_user, login_user, update_user_profile, update_supplier_details, update_farmer_details, update_admin_details,
     submit_feedback, log_sms_interaction, log_pest_detection, update_weather_data, get_weather_data, get_schemes_by_location,
-    get_user_name, get_last_4_pest_images,  get_pest_history, get_last_contacted_suppliers,
-    get_supplier_inventory, update_inventory, get_user_info, delete_account, get_supplier_details, call_supplier
+    get_user_name, get_last_4_pest_images, get_pest_history, get_last_contacted_suppliers,
+    get_supplier_inventory, update_inventory, get_user_info, delete_account, get_supplier_details, call_supplier, update_password,
+    forgot_password, verify_otp_and_reset_password
 )
 
 cors=CORS(app,origins='*')
@@ -39,11 +40,11 @@ def login_route():
     status_code = 200 if response["status"] == "success" else 401
     return jsonify(response), status_code
 
-@app.route('/update_profile/<int:user_id>', methods=['PUT'])
+@app.route('/profile/<user_id>', methods=['PUT'])
 def update_profile_route(user_id):
     data = request.get_json()
     name = data.get('name')
-    location = data.get('district')
+    location = data.get('location')
 
     if update_user_profile(user_id, name, location):
         return jsonify({"message": "Profile updated successfully"}), 200
@@ -51,10 +52,10 @@ def update_profile_route(user_id):
         return jsonify({"error": "Profile update failed"}), 400
 
     
-@app.route('/supplier_details/<int:supplier_id>', methods=['PUT'])
+@app.route('/supplier_details/<supplier_id>', methods=['PUT'])
 def update_supplier_details_route(supplier_id):
     data = request.get_json()
-    shop_name = data.get('shop_name')
+    shop_name = data.get('shopName')
     address = data.get('address')
     latitude = data.get('latitude')
     longitude = data.get('longitude')
@@ -64,17 +65,17 @@ def update_supplier_details_route(supplier_id):
     else:
         return jsonify({"error": "Profile update failed"}), 400
 
-@app.route('/farmer_details/<int:farmer_id>', methods=['PUT'])
+@app.route('/farmer_details/<farmer_id>', methods=['PUT'])
 def update_farmer_details_route(farmer_id):
     data = request.get_json()
-    farm_size=data.get('farm_size')
+    farm_size=data.get('farmSize')
 
     if update_farmer_details(farmer_id, farm_size):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
 
-@app.route('/admin_details/<int:admin_id>',methods=['PUT'])
+@app.route('/admin_details/<admin_id>',methods=['PUT'])
 def update_admin_details_route(admin_id):
     data = request.get_json()
     admin_level = data.get('admin_level')
@@ -120,7 +121,7 @@ def pest_detection_log_route():
     xai_path = data.get('xai_path')
     dosage = data.get('dosage')
 
-    if log_pest_detection(user_id, image_url, pest_name, confidence, xai_path):
+    if log_pest_detection(user_id, image_url, pest_name, confidence, dosage, xai_path):
         return jsonify({"message": "Pest detection logged"}), 201
     else:
         return jsonify({"error": "Failed to log pest detection"}), 400
@@ -198,12 +199,13 @@ def supplier_inventory_route(supplier_id):
     else:
         return jsonify({'error': 'Inventory not found'}), 404
 
-@app.route('/update_inventory/<supplier_id>', methods=['PUT'])
-def update_inventory_route(supplier_id):
+@app.route('/update_inventory', methods=['PUT'])
+def update_inventory_route():
     data = request.get_json()
     price = data.get('price')
     stock = data.get('stock')
     pesticide = data.get('pesticide')
+    supplier_id = data.get('supplier_id')
 
     if update_inventory(price, stock, pesticide, supplier_id):
         return jsonify({"message": "Inventory updated successfully"}), 200
@@ -223,7 +225,7 @@ def call_supplier_route():
     supplier_id = data.get('supplier_id')
     farmer_id = data.get('farmer_id')
     pesticide = data.get('pesticide')
-    phone = call_supplier(supplier_id,farmer_id,pesticide)
+    phone = call_supplier(supplier_id, farmer_id, pesticide)
     if phone:
         return jsonify({'supplier_phone': phone}), 200
     else:
@@ -231,18 +233,49 @@ def call_supplier_route():
 
 @app.route('/user_info/<user_id>', methods=['GET'])
 def user_info_route(user_id):
-    user_info = get_user_info(int(user_id))
-    if user_info:
-        return jsonify(user_info), 200
+    info = get_user_info(user_id)
+    if info:
+        return jsonify(info), 200
     else:
         return jsonify({'error': 'User not found'}), 404
 
 @app.route('/delete_account/<user_id>', methods=['DELETE'])
 def delete_account_route(user_id):
-    if delete_account(int(user_id)):
+    if delete_account(user_id):
         return jsonify({'message': 'Account deleted'}), 200
     else:
         return jsonify({'error': 'Account deletion failed'}), 400
+
+@app.route('/update_password', methods=['PUT'])
+def update_password_route():
+    data = request.get_json()
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+    user_id = data.get('user_id')
+    
+    result = update_password(old_password, new_password, user_id)
+    status_code = 200 if result["status"] == "success" else 400
+    return jsonify(result), status_code
+
+@app.route('/forgot_password', methods=['POST'])
+def forgot_password_route():
+    data = request.get_json()
+    email = data.get('email')
+    
+    result = forgot_password(email)
+    status_code = 200 if result["status"] == "success" else 400
+    return jsonify(result), status_code
+
+@app.route('/reset_password', methods=['POST'])
+def reset_password_route():
+    data = request.get_json()
+    email = data.get('email')
+    otp = data.get('otp')
+    new_password = data.get('new_password')
+    
+    result = verify_otp_and_reset_password(email, otp, new_password)
+    status_code = 200 if result["status"] == "success" else 400
+    return jsonify(result), status_code
 
 #-------------------------------------------------------------------------------------------------
 
