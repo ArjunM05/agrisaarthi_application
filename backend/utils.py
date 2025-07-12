@@ -771,7 +771,7 @@ def send_otp_email(user_id: str, email: str):
             'user_id': user_id,
             'email': email,
             'otp': otp_code,
-            'expiry_time': expires_at.isoformat()
+            'expiry_time': expires_at.replace(tzinfo=None).isoformat()
         }).execute()
         print(f"Stored OTP for {email}: {otp_code}, expires at {expires_at}")
 
@@ -835,10 +835,15 @@ def verify_otp_and_reset_password(email: str, otp: str, new_password: str):
             return {"status": "error", "message": "Invalid OTP"}
         
         stored_otp = otp_result.data[0]
-        # expiry_time = datetime.fromisoformat(stored_otp['expiry_time'])
+        expiry_time = datetime.fromisoformat(stored_otp['expiry_time'])
         
-        # if datetime.now() > expiry_time:
-        #     return {"status": "error", "message": "OTP has expired"}
+        # Make both datetime objects timezone-naive for comparison
+        current_time = datetime.now()
+        if expiry_time.tzinfo is not None:
+            expiry_time = expiry_time.replace(tzinfo=None)
+        
+        if current_time > expiry_time:
+            return {"status": "error", "message": "OTP has expired"}
         
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         
