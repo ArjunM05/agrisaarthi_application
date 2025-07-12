@@ -55,7 +55,7 @@ def update_profile_route(user_id):
 @app.route('/supplier_details/<supplier_id>', methods=['PUT'])
 def update_supplier_details_route(supplier_id):
     data = request.get_json()
-    shop_name = data.get('shopName')
+    shop_name = data.get('shop_name')
     address = data.get('address')
     latitude = data.get('latitude')
     longitude = data.get('longitude')
@@ -108,7 +108,7 @@ def sms_log_route():
     user_phone = data.get('user_phone')
     query_type = data.get('query_type')
     message = data.get('message')
-    response = data.get('response') # Response can be optional
+    response = data.get('response')
 
     if log_sms_interaction(user_phone, query_type, message, response):
         return jsonify({"message": "SMS log recorded"}), 201
