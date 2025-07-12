@@ -40,18 +40,23 @@ def login_route():
     return jsonify(response), status_code
 
 @app.route('/update_profile/<user_id>', methods=['PUT'])
+@app.route('/update_profile/<user_id>', methods=['PUT'])
 def update_profile_route(user_id):
     data = request.get_json()
     name = data.get('name')
     phone = data.get('phone')
     district = data.get('district')
+    phone = data.get('phone')
+    district = data.get('district')
 
+    if update_user_profile(user_id, name, phone, district):
     if update_user_profile(user_id, name, phone, district):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
 
     
+@app.route('/supplier_details/<supplier_id>', methods=['PUT'])
 @app.route('/supplier_details/<supplier_id>', methods=['PUT'])
 def update_supplier_details_route(supplier_id):
     data = request.get_json()
@@ -61,7 +66,10 @@ def update_supplier_details_route(supplier_id):
     longitude = data.get('longitude')
     approved = data.get('approved')
     service_areas = data.get('service_areas')
+    approved = data.get('approved')
+    service_areas = data.get('service_areas')
 
+    if update_supplier_details(supplier_id, shop_name, address, latitude, longitude, approved, service_areas):
     if update_supplier_details(supplier_id, shop_name, address, latitude, longitude, approved, service_areas):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
@@ -74,6 +82,7 @@ def update_farmer_details_route(farmer_id):
     main_crop = data.get('main_crop')
     irrigation_type = data.get('irrigation_type')
 
+    if update_farmer_details(farmer_id, farm_size, main_crop, irrigation_type):
     if update_farmer_details(farmer_id, farm_size, main_crop, irrigation_type):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
@@ -248,9 +257,22 @@ def user_info_route(user_id):
             return jsonify({'error': 'User not found'}), 404
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
+    try:
+        # Check if user_id is valid
+        if user_id == "undefined" or user_id == "null" or not user_id:
+            return jsonify({'error': 'Invalid user ID'}), 400
+        
+        user_info = get_user_info(user_id)
+        if user_info:
+            return jsonify(user_info), 200
+        else:
+            return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/delete_account/<user_id>', methods=['DELETE'])
 def delete_account_route(user_id):
+    if delete_account(user_id):
     if delete_account(user_id):
         return jsonify({'message': 'Account deleted'}), 200
     else:
