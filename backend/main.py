@@ -206,8 +206,9 @@ def update_inventory_route():
     stock = data.get('stock')
     pesticide = data.get('pesticide')
     supplier_id = data.get('supplier_id')
+    name = data.get('name')
 
-    if update_inventory(price, stock, pesticide, supplier_id):
+    if update_inventory(price, stock, pesticide, name, supplier_id):
         return jsonify({"message": "Inventory updated successfully"}), 200
     else:
         return jsonify({"error": "Inventory update failed"}), 400

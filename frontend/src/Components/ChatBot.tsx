@@ -1,165 +1,218 @@
-// declare global {
-//   interface Window {
-//     botpressWebChat: any;
-//   }
-// }
+// Declare global botpress object
+declare global {
+  interface Window {
+    botpress: {
+      on: (event: string, callback: () => void) => void;
+      init: (config: any) => void;
+      open: () => void;
+      close: () => void;
+    };
+  }
+}
 
-// import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-// const Chatbot = () => {
-//   useEffect(() => {
-//     const existingScript = document.getElementById("botpress-script");
-//     if (existingScript) return;
+const ChatBot = () => {
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-//     const script = document.createElement("script");
-//     script.id = "botpress-script";
-//     script.src = "https://cdn.botpress.cloud/webchat/v3.0/inject.js";
-//     script.async = true;
-//     document.body.appendChild(script);
+  useEffect(() => {
+    // Get user ID from localStorage
+    const userId = localStorage.getItem("user_id");
+    const userName = localStorage.getItem("user_name");
 
-//     script.onload = () => {
-//       window.botpressWebChat.init({
-//         composerPlaceholder: "Ask AgriSaarthi...",
-//         botId: "374ea289-7ebc-4ac4-acc5-c1bcd6b5b52e",
-//         clientId: "1712137a-bd8c-48a9-8534-d559d648bcd2",
-//         hostUrl: "https://cdn.botpress.cloud/webchat/v1",
-//         messagingUrl: "https://messaging.botpress.cloud",
-//         botName: "AgriBot",
-//         showPoweredBy: false,
-//         enableTranscriptDownload: true,
-//       });
-//     };
-//   }, []);
+    // Add minimal styles for Botpress integration
+    const style = document.createElement("style");
+    style.textContent = `
+      /* Hide the default Botpress FAB */
+      .bpFab {
+        display: none !important;
+      }
 
-//   return (
-//     <div className="container my-4">
-//       <h3>Welcome to AgriBot</h3>
-//       <p>The assistant will appear in the bottom-right corner of this page.</p>
-//     </div>
-//   );
-// };
+      /* Ensure the webchat container is visible */
+      #webchat {
+        position: fixed !important;
+        bottom: 90px !important;
+        right: 20px !important;
+        width: 400px !important;
+        height: 500px !important;
+        z-index: 9999 !important;
+        display: block !important;
+      }
 
-// export default Chatbot;
+      /* Make sure the webchat content is visible */
+      #webchat .bpWebchat {
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        max-width: 100% !important;
+        display: block !important;
+      }
 
-// // // import { useEffect } from 'react';
+      /* Ensure the chat window is visible when opened */
+      #webchat .bpWebchatWidget {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
 
-// // // const Chatbot = () => {
-// // // useEffect(() => {
-// // // // Inject Botpress scripts only once
-// // // const existingScript = document.getElementById('botpress-script');
-// // // if (existingScript) return;
-// // // const script = document.createElement('script');
-// // // script.id = 'botpress-script';
-// // // script.src = 'https://cdn.botpress.cloud/webchat/v0/inject.js';
-// // // script.async = true;
-// // // document.body.appendChild(script);
+      /* Hide any duplicate close buttons */
+      .webchat-close-btn {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
 
-// // // script.onload = () => {
-// // //   window.botpressWebChat.init({
-// // //     composerPlaceholder: "Ask AgriSaarthi...",
-// // //     botId: "374ea289-7ebc-4ac4-acc5-c1bcd6b5b52e",
-// // //     clientId: "1712137a-bd8c-48a9-8534-d559d648bcd2",
-// // //     hostUrl: "https://cdn.botpress.cloud/webchat/v0",
-// // //     messagingUrl: "https://messaging.botpress.cloud",
-// // //     botName: "AgriBot",
-// // //     showPoweredBy: false,
-// // //     enableTranscriptDownload: true
-// // //   });
-// // // };
-// // // }, []);
+    // Create webchat container with user-specific ID
+    const webchatContainer = document.createElement("div");
+    webchatContainer.id = `webchat-${userId || "anonymous"}`;
+    webchatContainer.style.width = "400px";
+    webchatContainer.style.height = "500px";
+    webchatContainer.style.position = "fixed";
+    webchatContainer.style.bottom = "90px";
+    webchatContainer.style.right = "20px";
+    webchatContainer.style.zIndex = "9999";
+    document.body.appendChild(webchatContainer);
 
-// // // return (
-// // // <div className="chatbot-container" style={{ padding: "2rem" }}>
-// // // <h1 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
-// // // Welcome to AgriBot
-// // // </h1>
-// // // <p>The assistant will appear in the bottom-right corner of this page.</p>
-// // // </div>
-// // // );
-// // // };
+    // Load Botpress script
+    const script = document.createElement("script");
+    script.src = "https://cdn.botpress.cloud/webchat/v3.0/inject.js";
+    script.async = true;
+    script.onload = () => {
+      console.log("Botpress script loaded");
 
-// // import { Fab, Webchat } from "@botpress/webchat";
-// // import { useState } from "react";
+      // Wait a bit for botpress to be available
+      setTimeout(() => {
+        if (window.botpress) {
+          console.log("Initializing Botpress...");
 
-// // function ChatBot() {
-// //   const [isWebchatOpen, setIsWebchatOpen] = useState(false);
-// //   const toggleWebchat = () => {
-// //     setIsWebchatOpen((prevState) => !prevState);
-// //   };
-// //   return (
-// //     <>
-// //       <Webchat
-// //         clientId="1712137a-bd8c-48a9-8534-d559d648bcd2" // Your client ID here
-// //         style={{
-// //           width: "400px",
-// //           height: "600px",
-// //           display: isWebchatOpen ? "flex" : "none",
-// //           position: "fixed",
-// //           bottom: "90px",
-// //           right: "20px",
-// //         }}
-// //       />
-// //       <Fab
-// //         onClick={() => toggleWebchat()}
-// //         style={{ position: "fixed", bottom: "20px", right: "20px" }}
-// //       />
-// //     </>
-// //   );
-// // }
+          window.botpress.on("webchat:ready", () => {
+            console.log("Botpress webchat ready");
+            setIsInitialized(true);
+          });
 
-// // export default ChatBot;
+          window.botpress.init({
+            botId: "374ea289-7ebc-4ac4-acc5-c1bcd6b5b52e",
+            configuration: {
+              version: "v1",
+              website: {},
+              email: {},
+              phone: {},
+              termsOfService: {},
+              privacyPolicy: {},
+              color: "#28a745",
+              variant: "solid",
+              headerVariant: "solid",
+              themeMode: "light",
+              fontFamily: "inter",
+              radius: 4,
+              feedbackEnabled: true,
+              footer: "[⚡ by Botpress](https://botpress.com/?from=webchat)",
+              allowFileUpload: true,
+              botName: "AgriBot",
+            },
+            clientId: "1712137a-bd8c-48a9-8534-d559d648bcd2",
+            selector: `#webchat-${userId || "anonymous"}`,
+            // Add user-specific session data
+            sessionId: userId ? `user-${userId}` : `anonymous-${Date.now()}`,
+            // Add user information to the session
+            user: {
+              id: userId || "anonymous",
+              name: userName || "Guest",
+            },
+          });
+        } else {
+          console.error("Botpress not available");
+        }
+      }, 1000);
+    };
+    script.onerror = () => {
+      console.error("Failed to load Botpress script");
+    };
+    document.head.appendChild(script);
 
-import { useState } from "react";
-import { Webchat, Fab } from "@botpress/webchat";
+    return () => {
+      // Cleanup
+      const existingScript = document.querySelector(
+        'script[src*="botpress.cloud/webchat/v3.0/inject.js"]'
+      );
+      if (existingScript) {
+        existingScript.remove();
+      }
+      const existingContainer = document.getElementById(
+        `webchat-${userId || "anonymous"}`
+      );
+      if (existingContainer) {
+        existingContainer.remove();
+      }
+    };
+  }, []);
 
-const clientId = "1712137a-bd8c-48a9-8534-d559d648bcd2";
+  const toggleChat = () => {
+    console.log("Toggling chat...");
+    console.log("Botpress available:", !!window.botpress);
+    if (window.botpress) {
+      try {
+        if (isOpen) {
+          window.botpress.close();
+          setIsOpen(false);
+          console.log("Chat closed");
+        } else {
+          window.botpress.open();
+          setIsOpen(true);
+          console.log("Chat opened successfully");
 
-export default function Chat() {
-  const [isWebchatOpen, setIsWebchatOpen] = useState(false);
-
-  const toggleWebchat = () => {
-    setIsWebchatOpen((prevState) => !prevState);
+          // Force show the webchat container
+          const userId = localStorage.getItem("user_id");
+          const webchatContainer = document.getElementById(
+            `webchat-${userId || "anonymous"}`
+          );
+          if (webchatContainer) {
+            webchatContainer.style.display = "block";
+            webchatContainer.style.visibility = "visible";
+            webchatContainer.style.opacity = "1";
+          }
+        }
+      } catch (error) {
+        console.error("Error toggling chat:", error);
+      }
+    } else {
+      console.error("Botpress not available");
+    }
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        display: "flex",
-        flexDirection: "column",
-        bottom: 0,
-        right: 0,
-        alignItems: "flex-end",
-        gap: "12px",
-        padding: "24px",
-        zIndex: 9999,
-      }}
-    >
+    <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 1000 }}>
       <div
+        className="bg-success rounded-circle d-flex align-items-center justify-content-center shadow"
         style={{
-          marginTop: "12px",
-          marginBottom: "72px",
-          width: "350px",
-          maxHeight: "500px",
-          overflow: "scroll",
-          borderRadius: "16px",
-          backgroundColor: "#fff",
-          transform: isWebchatOpen ? "scale(1)" : "scale(0)",
-          transformOrigin: "bottom right",
-          transition: "transform 0.3s ease-in-out",
+          width: "60px",
+          height: "60px",
+          cursor: "pointer",
+          transition: "all 0.3s ease",
         }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.1)";
+          e.currentTarget.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.2)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+        }}
+        onClick={toggleChat}
       >
-        {isWebchatOpen && (
-          <Webchat
-            clientId={clientId}
-            style={{ width: "100%", height: "100%" }}
-          />
-        )}
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="text-white"
+          style={{ width: "24px", height: "24px" }}
+        >
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
+        </svg>
       </div>
-      <Fab
-        onClick={toggleWebchat}
-        style={{ position: "absolute", bottom: "24px", right: "24px" }}
-      />
     </div>
   );
-}
+};
+
+export default ChatBot;

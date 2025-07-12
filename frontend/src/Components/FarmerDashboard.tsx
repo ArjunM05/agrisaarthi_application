@@ -12,6 +12,7 @@ import {
   FaWater,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import ChatBot from "./ChatBot";
 
 import pest1 from "../assets/pest1.jpg";
 import pest2 from "../assets/pest2.jpg";
@@ -131,8 +132,14 @@ const FarmerDashboard = () => {
     setShowModal(true);
   };
 
-  const handleCallSupplier = async (supplierId: number) => {
+  const handleCallSupplier = async (supplierId: number, pesticide: string) => {
     try {
+      const user_id = localStorage.getItem("user_id");
+      if (!user_id) {
+        alert("Please login to contact suppliers");
+        return;
+      }
+
       const response = await fetch("http://localhost:5001/call_supplier", {
         method: "POST",
         headers: {
@@ -140,18 +147,22 @@ const FarmerDashboard = () => {
         },
         body: JSON.stringify({
           supplier_id: supplierId,
+          farmer_id: user_id,
+          pesticide: pesticide,
         }),
       });
 
       const data = await response.json();
       if (data.supplier_phone) {
         window.open(`tel:${data.supplier_phone}`, "_blank");
+      } else {
+        alert("Could not get supplier phone number");
       }
     } catch (error) {
-      console.error("Error getting supplier phone:", error);
+      console.error("Error calling supplier:", error);
+      alert("Error contacting supplier");
     }
   };
-
   const handleViewHistory = () => {
     navigate("/farmer/supplier-history");
   };
@@ -364,22 +375,35 @@ const FarmerDashboard = () => {
             <Card.Body>
               {suppliers.length > 0 ? (
                 <div
-                  className="border rounded p-3 shadow-sm mb-3"
+                  className="border rounded p-3 shadow-sm mb-2"
                   style={{ cursor: "pointer" }}
                   onClick={() => handleSupplierClick(suppliers[0])}
                 >
-                  <h5>{suppliers[0].supplier_name}</h5>
+                  <h5>{suppliers[0].shop_name}</h5>
                   <p>Pesticide: {suppliers[0].pesticide}</p>
-                  <p>Contact Time: {suppliers[0].contact_time}</p>
+                  <p>
+                    Contacted On:{" "}
+                    {suppliers[0].contact_time.slice(8, 10) +
+                      suppliers[0].contact_time[7] +
+                      suppliers[0].contact_time.slice(5, 7) +
+                      suppliers[0].contact_time[4] +
+                      suppliers[0].contact_time.slice(0, 4)}
+                  </p>
                   <button
-                    className="btn btn-success btn-sm"
+                    className="btn btn-success btn-sm mt-3"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleCallSupplier(suppliers[0].supplier_id);
+                      handleCallSupplier(
+                        suppliers[0].supplier_id,
+                        suppliers[0].pesticide
+                      );
                     }}
                   >
                     <FaPhone className="me-1" /> Call Supplier
                   </button>
+                  <small className="text-muted text-end d-block">
+                    Click for detailed view
+                  </small>
                 </div>
               ) : (
                 <p className="text-center">No suppliers contacted recently</p>
@@ -397,7 +421,10 @@ const FarmerDashboard = () => {
         <Modal.Body>
           {selectedSupplier && supplierDetails ? (
             <div>
-              <h5>{selectedSupplier.supplier_name}</h5>
+              <h5>{selectedSupplier.shop_name}</h5>
+              <p>
+                <strong>Supplier:</strong> {selectedSupplier.supplier_name}
+              </p>
               <p>
                 <strong>Pesticide:</strong> {selectedSupplier.pesticide}
               </p>
@@ -412,7 +439,12 @@ const FarmerDashboard = () => {
                 {supplierDetails.address || "Address not available"}
               </p>
               <p>
-                <strong>Contact Time:</strong> {selectedSupplier.contact_time}
+                <strong>Contacted On:</strong>{" "}
+                {suppliers[0].contact_time.slice(8, 10) +
+                  suppliers[0].contact_time[7] +
+                  suppliers[0].contact_time.slice(5, 7) +
+                  suppliers[0].contact_time[4] +
+                  suppliers[0].contact_time.slice(0, 4)}
               </p>
             </div>
           ) : (
@@ -427,7 +459,10 @@ const FarmerDashboard = () => {
             variant="success"
             onClick={() => {
               if (selectedSupplier) {
-                handleCallSupplier(selectedSupplier.supplier_id);
+                handleCallSupplier(
+                  selectedSupplier.supplier_id,
+                  selectedSupplier.pesticide
+                );
               }
               setShowModal(false);
             }}
@@ -436,6 +471,9 @@ const FarmerDashboard = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* ChatBot Component */}
+      <ChatBot />
     </>
   );
 };

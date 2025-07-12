@@ -100,7 +100,8 @@ const SupplierHistoryPage = () => {
                       <Card.Text>
                         <strong>Pesticide:</strong> {supplier.pesticide}
                         <br />
-                        <strong>Contact Time:</strong> {supplier.contact_time}
+                        <strong>Contact Time:</strong>{" "}
+                        {supplier.contact_time.slice(0, 10)}
                       </Card.Text>
                       <Button
                         variant="success"
@@ -158,7 +159,7 @@ const SupplierHistoryPage = () => {
                   </p>
                   <p>
                     <strong>Contact Time:</strong>{" "}
-                    {selectedSupplier.contact_time}
+                    {selectedSupplier.contact_time.slice(0, 10)}
                   </p>
                 </Col>
               </Row>

@@ -10,10 +10,12 @@ import {
   FaSun,
   FaWater,
 } from "react-icons/fa";
+import ChatBot from "./ChatBot";
 
 const SupplierDashboard = () => {
   const [weather, setWeather] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
+  const userName = localStorage.getItem("user_name");
 
   useEffect(() => {
     fetch(
@@ -27,7 +29,7 @@ const SupplierDashboard = () => {
 
   return (
     <>
-      <h3 className="mb-4">Welcome, Supplier 👋</h3>
+      <h3 className="mb-4">Welcome, {userName} 👋</h3>
 
       <div className="row mb-4">
         {expanded ? (
@@ -159,6 +161,7 @@ const SupplierDashboard = () => {
           </>
         )}
       </div>
+      <ChatBot />
     </>
   );
 };
