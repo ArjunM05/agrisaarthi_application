@@ -93,24 +93,28 @@ def login_user(email: str, password: str):
         return {"status": "error", "code": 3, "message": f"Error: {str(e)}"}
 
 
-def update_user_profile(user_id: int, name: str, location: str):
+def update_user_profile(user_id, name=None, phone=None, district=None):
     """
     Updates the profile information for a given user.
 
     Args:
         user_id (int): The ID of the user to update.
-        name (str): The new name for the user.
-        location (str): The new location string for the user.
+        name (str, optional): The new name for the user.
+        phone (str, optional): The new phone number for the user.
+        district (str, optional): The new district for the user.
     """
     user_result = db.table('users').select('id').eq('id', user_id).limit(1).execute()
     if not user_result.data:
         print(f"Error: User with ID {user_id} not found.")
         return False
+    
     update_fields = {}
     if name is not None:
         update_fields['name'] = name
-    if location is not None:
-        update_fields['district'] = location
+    if phone is not None:
+        update_fields['phone'] = phone
+    if district is not None:
+        update_fields['district'] = district
 
     if not update_fields:
         print(f"No fields to update for user ID {user_id}.")
@@ -128,16 +132,18 @@ def update_user_profile(user_id: int, name: str, location: str):
         print(f"An unexpected error occurred during profile update: {e}")
         return False
 
-def update_supplier_details(supplier_id: int, shop_name: str, address: str, latitude: Decimal, longitude: Decimal):
+def update_supplier_details(supplier_id, shop_name=None, address=None, latitude=None, longitude=None, approved=None, service_areas=None):
     """
     Updates the supplier information.
 
     Args:
         supplier_id (int): The ID of the supplier to update.
-        shop_name (str): The name of the supplier's shop.
-        address (str): The address of the shop.
-        latitude (Decimal): The latitude of the location of the shop.
-        longitude (Decimal): The longitude of the location of the shop.
+        shop_name (str, optional): The name of the supplier's shop.
+        address (str, optional): The address of the shop.
+        latitude (float, optional): The latitude of the location of the shop.
+        longitude (float, optional): The longitude of the location of the shop.
+        approved (bool, optional): Whether the supplier is approved.
+        service_areas (list, optional): List of service areas.
     """
     supplier_result = db.table('users').select('id').eq('id', supplier_id).limit(1).execute()
     if not supplier_result.data:
@@ -149,33 +155,40 @@ def update_supplier_details(supplier_id: int, shop_name: str, address: str, lati
         update_fields['shop_name'] = shop_name
     if address is not None:
         update_fields['address'] = address
-    if latitude is not None and longitude is not None:
+    if latitude is not None:
         update_fields['latitude'] = float(latitude)
+    if longitude is not None:
         update_fields['longitude'] = float(longitude)
+    if approved is not None:
+        update_fields['approved'] = approved
+    if service_areas is not None:
+        update_fields['service_areas'] = service_areas
 
     if not update_fields:
         print(f"No fields to update for supplier ID {supplier_id}.")
         return False
 
     try:
-        result = db.table('users').update(update_fields).eq('id', supplier_id).execute()
+        result = db.table('supplier_details').update(update_fields).eq('supplier_id', supplier_id).execute()
         if result.data:
-            print(f"User ID {supplier_id} profile updated successfully.")
+            print(f"Supplier ID {supplier_id} details updated successfully.")
             return True
         else:
-            print(f"Error: Failed to update supplier profile in database.")
+            print(f"Error: Failed to update supplier details in database.")
             return False
     except Exception as e:
-        print(f"An unexpected error occurred during supplier profile update: {e}")
+        print(f"An unexpected error occurred during supplier details update: {e}")
         return False
 
-def update_farmer_details(farmer_id: int, farm_size: Decimal):
+def update_farmer_details(farmer_id, farm_size=None, main_crop=None, irrigation_type=None):
     """
     Updates the farmer information.
 
     Args:
         farmer_id (int): The ID of the farmer to update.
-        farm_size (Decimal): The land area of the farm.
+        farm_size (float, optional): The land area of the farm.
+        main_crop (str, optional): The main crop grown by the farmer.
+        irrigation_type (str, optional): The type of irrigation used.
     """
     farmer_result = db.table('users').select('id').eq('id', farmer_id).limit(1).execute()
     if not farmer_result.data:
@@ -185,21 +198,25 @@ def update_farmer_details(farmer_id: int, farm_size: Decimal):
     update_fields = {}
     if farm_size is not None:
         update_fields['farm_size'] = float(farm_size)
+    if main_crop is not None:
+        update_fields['main_crop'] = main_crop
+    if irrigation_type is not None:
+        update_fields['irrigation_type'] = irrigation_type
 
     if not update_fields:
         print(f"No fields to update for farmer ID {farmer_id}.")
         return False
 
     try:
-        result = db.table('users').update(update_fields).eq('id', farmer_id).execute()
+        result = db.table('farmer_details').update(update_fields).eq('farmer_id', farmer_id).execute()
         if result.data:
-            print(f"User ID {farmer_id} profile updated successfully.")
+            print(f"Farmer ID {farmer_id} details updated successfully.")
             return True
         else:
-            print(f"Error: Failed to update farmer profile in database.")
+            print(f"Error: Failed to update farmer details in database.")
             return False
     except Exception as e:
-        print(f"An unexpected error occurred during farmer profile update: {e}")
+        print(f"An unexpected error occurred during farmer details update: {e}")
         return False
     
 def update_admin_details(admin_id: int, admin_level: int, department: str):
@@ -597,7 +614,7 @@ def call_supplier(supplier_id: int, farmer_id: int, pesticide: str):
         print(f"Error retrieving supplier phone: {e}")
         return None
 
-def get_user_info(user_id: int):
+def get_user_info(user_id):
     """
     Retrieves all user info and role-specific details.
     Args:
@@ -614,11 +631,28 @@ def get_user_info(user_id: int):
             details_result = db.table('farmer_details').select('*').eq('farmer_id', user_id).limit(1).execute()
             if details_result.data:
                 details = details_result.data[0]
+            else:
+                # Create default farmer details if none exist
+                details = {
+                    'farm_size': None,
+                    'main_crop': None,
+                    'irrigation_type': None
+                }
             user['details'] = details
         elif role == 'supplier':
             details_result = db.table('supplier_details').select('*').eq('supplier_id', user_id).limit(1).execute()
             if details_result.data:
                 details = details_result.data[0]
+            else:
+                # Create default supplier details if none exist
+                details = {
+                    'shop_name': None,
+                    'address': None,
+                    'latitude': None,
+                    'longitude': None,
+                    'approved': False,
+                    'service_areas': []
+                }
             user['details'] = details
         elif role == 'admin':
             details_result = db.table('admin_details').select('*').eq('admin_id', user_id).limit(1).execute()
@@ -630,7 +664,7 @@ def get_user_info(user_id: int):
         print(f"Error retrieving user info: {e}")
         return None
 
-def delete_account(user_id: int):
+def delete_account(user_id):
     """
     Deletes a user account and related details.
     Args:
