@@ -40,7 +40,6 @@ def login_route():
     return jsonify(response), status_code
 
 @app.route('/update_profile/<user_id>', methods=['PUT'])
-@app.route('/update_profile/<user_id>', methods=['PUT'])
 def update_profile_route(user_id):
     data = request.get_json()
     name = data.get('name')
@@ -50,13 +49,11 @@ def update_profile_route(user_id):
     district = data.get('district')
 
     if update_user_profile(user_id, name, phone, district):
-    if update_user_profile(user_id, name, phone, district):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
 
     
-@app.route('/supplier_details/<supplier_id>', methods=['PUT'])
 @app.route('/supplier_details/<supplier_id>', methods=['PUT'])
 def update_supplier_details_route(supplier_id):
     data = request.get_json()
@@ -70,7 +67,6 @@ def update_supplier_details_route(supplier_id):
     service_areas = data.get('service_areas')
 
     if update_supplier_details(supplier_id, shop_name, address, latitude, longitude, approved, service_areas):
-    if update_supplier_details(supplier_id, shop_name, address, latitude, longitude, approved, service_areas):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
@@ -82,7 +78,6 @@ def update_farmer_details_route(farmer_id):
     main_crop = data.get('main_crop')
     irrigation_type = data.get('irrigation_type')
 
-    if update_farmer_details(farmer_id, farm_size, main_crop, irrigation_type):
     if update_farmer_details(farmer_id, farm_size, main_crop, irrigation_type):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
@@ -206,23 +201,38 @@ def last_contacted_route(farmer_id):
 
 @app.route('/supplier_inventory/<supplier_id>', methods=['GET'])
 def supplier_inventory_route(supplier_id):
-    inventory = get_supplier_inventory(supplier_id)
-    if inventory:
-        return jsonify({'inventory': inventory}), 200
-    else:
-        return jsonify({'error': 'Inventory not found'}), 404
+    try:
+        # Check if supplier_id is valid
+        if supplier_id == "undefined" or supplier_id == "null" or not supplier_id:
+            return jsonify({'error': 'Invalid supplier ID'}), 400
+        
+        inventory = get_supplier_inventory(supplier_id)
+        if inventory:
+            return jsonify({'inventory': inventory}), 200
+        else:
+            return jsonify({'inventory': []}), 200
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/update_inventory/<supplier_id>', methods=['PUT'])
 def update_inventory_route(supplier_id):
-    data = request.get_json()
-    price = data.get('price')
-    stock = data.get('stock')
-    pesticide = data.get('pesticide')
+    try:
+        # Check if supplier_id is valid
+        if supplier_id == "undefined" or supplier_id == "null" or not supplier_id:
+            return jsonify({'error': 'Invalid supplier ID'}), 400
+        
+        data = request.get_json()
+        price = data.get('price')
+        stock = data.get('stock')
+        pesticide = data.get('pesticide')
+        name = data.get('name')
 
-    if update_inventory(price, stock, pesticide, supplier_id):
-        return jsonify({"message": "Inventory updated successfully"}), 200
-    else:
-        return jsonify({"error": "Inventory update failed"}), 400
+        if update_inventory(price, stock, pesticide, name, supplier_id):
+            return jsonify({"message": "Inventory updated successfully"}), 200
+        else:
+            return jsonify({"error": "Inventory update failed"}), 400
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/supplier_details', methods=['POST'])
 def supplier_details_route():
@@ -272,7 +282,6 @@ def user_info_route(user_id):
 
 @app.route('/delete_account/<user_id>', methods=['DELETE'])
 def delete_account_route(user_id):
-    if delete_account(user_id):
     if delete_account(user_id):
         return jsonify({'message': 'Account deleted'}), 200
     else:

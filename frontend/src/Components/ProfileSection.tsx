@@ -43,6 +43,7 @@ const ProfileSection: React.FC = () => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [supplierHistory, setSupplierHistory] = useState<any[]>([]);
 
   const userRole = localStorage.getItem("user_type");
   const userId = localStorage.getItem("user_id");
@@ -104,6 +105,25 @@ const ProfileSection: React.FC = () => {
             if (userInfo.details) {
               setAdditionalInfo(userInfo.details);
               setEditAdditional(userInfo.details);
+            }
+          }
+
+          // Fetch supplier history for farmers
+          if (userRole === "farmer") {
+            try {
+              const historyResponse = await fetch(
+                `http://localhost:5001/last_contacted_suppliers/${userId}`
+              );
+              if (historyResponse.ok) {
+                const historyData = await historyResponse.json();
+                if (historyData.contacts && historyData.contacts.length > 0) {
+                  // Take only the last 2 contacts
+                  const lastTwoContacts = historyData.contacts.slice(0, 2);
+                  setSupplierHistory(lastTwoContacts);
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching supplier history:", error);
             }
           }
         }
@@ -222,7 +242,7 @@ const ProfileSection: React.FC = () => {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                farmSize: farmerDetails.farm_size,
+                farm_size: farmerDetails.farm_size,
                 main_crop: farmerDetails.main_crop,
                 irrigation_type: farmerDetails.irrigation_type,
               }),
@@ -245,7 +265,7 @@ const ProfileSection: React.FC = () => {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                shopName: supplierDetails.shop_name,
+                shop_name: supplierDetails.shop_name,
                 address: supplierDetails.address,
                 latitude: supplierDetails.latitude,
                 longitude: supplierDetails.longitude,
@@ -297,6 +317,42 @@ const ProfileSection: React.FC = () => {
     }
 
     setEditAdditional({ ...editAdditional, [name]: parsedValue });
+  };
+
+  const formatContactDate = (contactTime: string) => {
+    const contactDate = new Date(contactTime);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Reset time to compare only dates
+    const contactDateOnly = new Date(
+      contactDate.getFullYear(),
+      contactDate.getMonth(),
+      contactDate.getDate()
+    );
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const yesterdayOnly = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate()
+    );
+
+    if (contactDateOnly.getTime() === todayOnly.getTime()) {
+      return "Today";
+    } else if (contactDateOnly.getTime() === yesterdayOnly.getTime()) {
+      return "Yesterday";
+    } else {
+      const diffTime = Math.abs(
+        todayOnly.getTime() - contactDateOnly.getTime()
+      );
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return `${diffDays} days ago`;
+    }
   };
 
   const renderHistoryCard = (
@@ -780,10 +836,20 @@ const ProfileSection: React.FC = () => {
             ])}
           </Col>
           <Col md={6}>
-            {renderHistoryCard("Suppliers Contacted", [
-              { name: "Suresh Agro", detail: "1 day ago" },
-              { name: "Green Grow", detail: "3 days ago" },
-            ])}
+            {renderHistoryCard(
+              "Suppliers Contacted",
+              supplierHistory.length > 0
+                ? supplierHistory.map((contact) => ({
+                    name: contact.shop_name,
+                    detail: formatContactDate(contact.contact_time),
+                  }))
+                : [
+                    {
+                      name: "No contacts yet",
+                      detail: "Start calling suppliers",
+                    },
+                  ]
+            )}
           </Col>
         </Row>
       )}

@@ -474,7 +474,7 @@ def get_last_contacted_suppliers(farmer_id: int):
         farmer_id (int): The farmer's ID.
     """
     try:
-        result = db.table('suppliers_contacted').select('supplier_id, pesticide_name, contact_time').eq('farmer_id', farmer_id).order('timestamp', desc=True).execute()
+        result = db.table('suppliers_contacted').select('supplier_id, pesticide_name, contact_time').eq('farmer_id', farmer_id).order('contact_time', desc=True).execute()
         if not result.data:
             return []
         contacts = []
@@ -503,12 +503,12 @@ def get_last_contacted_suppliers(farmer_id: int):
         print(f"Error retrieving contacted suppliers: {e}")
         return []
 
-def get_supplier_inventory(supplier_id: int):
+def get_supplier_inventory(supplier_id):
     """
     Retrieves supplier inventory information.
 
     Args:
-        supplier_id (int): The supplier's ID.
+        supplier_id: The supplier's ID (string UUID).
     """
     try:
         result = db.table('pesticide_listings').select('*').eq('supplier_id', supplier_id).execute()
@@ -520,7 +520,7 @@ def get_supplier_inventory(supplier_id: int):
         print(f"Error retrieving supplier inventory: {e}")
         return []
 
-def update_inventory(price: float, stock: int, pesticide: str, supplier_id: int):
+def update_inventory(price: float, stock: int, pesticide: str, name: str, supplier_id):
     """
     Updates the inventory information of the supplier.
 
@@ -528,7 +528,8 @@ def update_inventory(price: float, stock: int, pesticide: str, supplier_id: int)
         price (float): The price of the pesticide.
         stock (int): The available stock quantity.
         pesticide (str): The name of the pesticide.
-        supplier_id (int): The supplier's ID.
+        name (str): The supplier's name.
+        supplier_id: The supplier's ID (string UUID).
     """
     try:
         supplier_result = db.table('users').select('id').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
@@ -536,12 +537,25 @@ def update_inventory(price: float, stock: int, pesticide: str, supplier_id: int)
             print(f"Error: Supplier with ID {supplier_id} not found.")
             return False
 
-        result = db.table('pesticide_listings').upsert({
-            'supplier_id': supplier_id,
-            'pesticide': pesticide,
-            'price': price,
-            'stock': stock
-        }, on_conflict="supplier_id,pesticide").execute()
+        # First check if the record exists
+        existing_record = db.table('pesticide_listings').select('*').eq('supplier_id', supplier_id).eq('pesticide', pesticide).execute()
+        
+        if existing_record.data:
+            # Update existing record
+            result = db.table('pesticide_listings').update({
+                'price': price,
+                'name': name,
+                'stock': stock
+            }).eq('supplier_id', supplier_id).eq('pesticide', pesticide).execute()
+        else:
+            # Insert new record
+            result = db.table('pesticide_listings').insert({
+                'supplier_id': supplier_id,
+                'pesticide': pesticide,
+                'price': price,
+                'name': name,
+                'stock': stock
+            }).execute()
         
         if result.data:
             print(f"Inventory updated successfully for supplier ID {supplier_id}.")
