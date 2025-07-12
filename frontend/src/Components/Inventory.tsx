@@ -274,9 +274,6 @@ const SupplierInventory = () => {
                     <Card.Title>{item.pesticide}</Card.Title>
                     <Card.Body>
                       <p>
-                        <strong>Pest:</strong> {item.pest}
-                      </p>
-                      <p>
                         <strong>Price:</strong> Rs. {item.price}
                       </p>
                       <p>
@@ -328,10 +325,7 @@ const SupplierInventory = () => {
                 disabled
               />
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Pest</Form.Label>
-              <Form.Control type="text" value={selectedOption?.pest} disabled />
-            </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Price (Rs.)</Form.Label>
               <Form.Control

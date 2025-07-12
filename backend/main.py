@@ -199,13 +199,12 @@ def supplier_inventory_route(supplier_id):
     else:
         return jsonify({'error': 'Inventory not found'}), 404
 
-@app.route('/update_inventory', methods=['PUT'])
-def update_inventory_route():
+@app.route('/update_inventory/<supplier_id>', methods=['PUT'])
+def update_inventory_route(supplier_id):
     data = request.get_json()
     price = data.get('price')
     stock = data.get('stock')
     pesticide = data.get('pesticide')
-    supplier_id = data.get('supplier_id')
     name = data.get('name')
 
     if update_inventory(price, stock, pesticide, name, supplier_id):
