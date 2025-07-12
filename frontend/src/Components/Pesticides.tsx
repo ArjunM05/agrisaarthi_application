@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Button } from "react-bootstrap";
 import supabase from "../utils/supabase";
+import ChatBot from "./ChatBot";
 
 type PesticideOption = {
   pest: string;
@@ -292,6 +293,7 @@ const Pesticides: React.FC = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+      <ChatBot />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import supabase from "../utils/supabase";
+import ChatBot from "./ChatBot";
 
 interface Pesticide {
   pest: string;
@@ -295,6 +296,7 @@ const PestIdentification: React.FC = () => {
           )}
         </div>
       )}
+      <ChatBot />
     </div>
   );
 };

@@ -12,6 +12,7 @@ import {
   FaWater,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import ChatBot from "./ChatBot";
 
 import pest1 from "../assets/pest1.jpg";
 import pest2 from "../assets/pest2.jpg";
@@ -470,6 +471,9 @@ const FarmerDashboard = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* ChatBot Component */}
+      <ChatBot />
     </>
   );
 };

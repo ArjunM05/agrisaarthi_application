@@ -9,6 +9,7 @@ import {
   ToastContainer,
 } from "react-bootstrap";
 import supabase from "../utils/supabase";
+import ChatBot from "./ChatBot";
 
 interface PesticideOption {
   pest: string;
@@ -398,6 +399,7 @@ const SupplierInventory = () => {
           </Toast.Body>
         </Toast>
       </ToastContainer>
+      <ChatBot />
     </div>
   );
 };
