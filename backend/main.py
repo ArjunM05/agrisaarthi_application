@@ -40,7 +40,6 @@ def login_route():
     return jsonify(response), status_code
 
 @app.route('/update_profile/<user_id>', methods=['PUT'])
-@app.route('/update_profile/<user_id>', methods=['PUT'])
 def update_profile_route(user_id):
     data = request.get_json()
     name = data.get('name')
@@ -50,13 +49,10 @@ def update_profile_route(user_id):
     district = data.get('district')
 
     if update_user_profile(user_id, name, phone, district):
-    if update_user_profile(user_id, name, phone, district):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
 
-    
-@app.route('/supplier_details/<supplier_id>', methods=['PUT'])
 @app.route('/supplier_details/<supplier_id>', methods=['PUT'])
 def update_supplier_details_route(supplier_id):
     data = request.get_json()
@@ -70,7 +66,6 @@ def update_supplier_details_route(supplier_id):
     service_areas = data.get('service_areas')
 
     if update_supplier_details(supplier_id, shop_name, address, latitude, longitude, approved, service_areas):
-    if update_supplier_details(supplier_id, shop_name, address, latitude, longitude, approved, service_areas):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
@@ -81,8 +76,7 @@ def update_farmer_details_route(farmer_id):
     farm_size = data.get('farmSize')
     main_crop = data.get('main_crop')
     irrigation_type = data.get('irrigation_type')
-
-    if update_farmer_details(farmer_id, farm_size, main_crop, irrigation_type):
+    
     if update_farmer_details(farmer_id, farm_size, main_crop, irrigation_type):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
@@ -272,7 +266,6 @@ def user_info_route(user_id):
 
 @app.route('/delete_account/<user_id>', methods=['DELETE'])
 def delete_account_route(user_id):
-    if delete_account(user_id):
     if delete_account(user_id):
         return jsonify({'message': 'Account deleted'}), 200
     else:
