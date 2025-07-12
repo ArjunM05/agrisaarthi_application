@@ -828,16 +828,17 @@ def verify_otp_and_reset_password(email: str, otp: str, new_password: str):
         
         user_id = user_result.data[0]['id']
         
-        otp_result = db.table('otp_storage').select('*').eq('user_id', user_id).eq('otp', otp).eq('used','false').lt('expiry_time', datetime.now().isoformat()).limit(1).execute()
+        otp_result = db.table('otp_storage').select('*').eq('user_id', user_id).eq('otp', otp).eq('used','false').limit(1).execute()
         
         if not otp_result.data:
+            print(f"Invalid OTP for user {user_id}")
             return {"status": "error", "message": "Invalid OTP"}
         
         stored_otp = otp_result.data[0]
-        expiry_time = datetime.fromisoformat(stored_otp['expiry_time'])
+        # expiry_time = datetime.fromisoformat(stored_otp['expiry_time'])
         
-        if datetime.now() > expiry_time:
-            return {"status": "error", "message": "OTP has expired"}
+        # if datetime.now() > expiry_time:
+        #     return {"status": "error", "message": "OTP has expired"}
         
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         

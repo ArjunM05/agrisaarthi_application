@@ -1,6 +1,15 @@
 // components/ProfileSection.tsx
 import React, { useState, useEffect } from "react";
-import { Alert, Button, Card, Row, Col, Modal } from "react-bootstrap";
+import {
+  Alert,
+  Button,
+  Card,
+  Row,
+  Col,
+  Modal,
+  Toast,
+  ToastContainer,
+} from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 type User = {
@@ -44,10 +53,32 @@ const ProfileSection: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [supplierHistory, setSupplierHistory] = useState<any[]>([]);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    variant: "success",
+  });
 
   const userRole = localStorage.getItem("user_type");
   const userId = localStorage.getItem("user_id");
   const navigate = useNavigate();
+
+  // Toast helper
+  const showToast = (
+    title: string,
+    message: string,
+    variant: "success" | "danger" | "info" = "success"
+  ) => {
+    setToast({ show: true, message: `${title}: ${message}`, variant });
+    setTimeout(() => setToast((t) => ({ ...t, show: false })), 3000);
+  };
 
   // Type guards
   const isFarmerDetails = (info: AdditionalInfo): info is FarmerDetails => {
@@ -65,14 +96,6 @@ const ProfileSection: React.FC = () => {
         setLoading(true);
 
         // Get basic info from localStorage
-        console.log("localStorage values:", {
-          userId,
-          email: localStorage.getItem("user_email"),
-          role: localStorage.getItem("user_type"),
-          name: localStorage.getItem("user_name"),
-          phone: localStorage.getItem("user_phone"),
-          district: localStorage.getItem("user_district"),
-        });
 
         // Check if user is logged in
         const userEmail = localStorage.getItem("user_email");
@@ -147,6 +170,75 @@ const ProfileSection: React.FC = () => {
 
   const handleViewHistory = () => {
     navigate("/farmer/supplier-history");
+  };
+
+  const handlePasswordChange = async () => {
+    if (!user) return;
+
+    // Validation
+    if (
+      !passwordData.oldPassword ||
+      !passwordData.newPassword ||
+      !passwordData.confirmPassword
+    ) {
+      showToast("Error", "Please fill in all password fields", "danger");
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showToast("Error", "New passwords do not match", "danger");
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5001/update_password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          old_password: passwordData.oldPassword,
+          new_password: passwordData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.status === "success") {
+        showToast(
+          "Success",
+          "Password updated successfully! You will be logged out.",
+          "success"
+        );
+        setShowPasswordModal(false);
+        setPasswordData({
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        // Logout after successful password change
+        setTimeout(() => {
+          localStorage.clear();
+          navigate("/login");
+        }, 2000);
+      } else {
+        showToast(
+          "Error",
+          data.message || "Failed to update password",
+          "danger"
+        );
+      }
+    } catch (error) {
+      console.error("Error updating password:", error);
+      showToast(
+        "Error",
+        "Failed to update password. Please try again.",
+        "danger"
+      );
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -413,486 +505,588 @@ const ProfileSection: React.FC = () => {
   }
 
   return (
-    <div className="container">
-      {showAlert && (
-        <Alert
-          variant="warning"
-          className="position-sticky top-0 z-3"
-          dismissible
-          onClose={() => setShowAlert(false)}
-        >
-          Some fields in your profile are incomplete. Please update them.
-        </Alert>
-      )}
+    <>
+      <div className="container">
+        {showAlert && (
+          <Alert
+            variant="warning"
+            className="position-sticky top-0 z-3"
+            dismissible
+            onClose={() => setShowAlert(false)}
+          >
+            Some fields in your profile are incomplete. Please update them.
+          </Alert>
+        )}
 
-      {/* Basic Info Card */}
-      <Card className="mb-4 shadow-sm">
-        <Card.Header className="fw-bold d-flex justify-content-between align-items-center">
-          <span className="fs-4">Basic Info</span>
-          {!editMode.basic && (
-            <Button
-              variant="outline-primary"
-              size="sm"
-              onClick={() => handleEdit("basic")}
-            >
-              Edit
-            </Button>
-          )}
-        </Card.Header>
-        <Card.Body>
-          {editMode.basic ? (
-            <>
-              <div className="mb-2">
-                <label className="form-label mb-0">
-                  <strong>Name:</strong>
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  name="name"
-                  value={editUser?.name || ""}
-                  onChange={handleUserChange}
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label mb-0">
-                  <strong>Email:</strong>
-                </label>
-                <input
-                  type="email"
-                  className="form-control form-control-sm"
-                  name="email"
-                  value={editUser?.email || ""}
-                  disabled
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label mb-0">
-                  <strong>Phone:</strong>
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  name="phone"
-                  value={editUser?.phone || ""}
-                  onChange={handleUserChange}
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label mb-0">
-                  <strong>Role:</strong>
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  name="role"
-                  value={editUser?.role || ""}
-                  disabled
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label mb-0">
-                  <strong>District:</strong>
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  name="district"
-                  value={editUser?.district || ""}
-                  onChange={handleUserChange}
-                />
-              </div>
-              <div className="d-flex gap-2 mt-2">
-                <Button
-                  size="sm"
-                  variant="success"
-                  onClick={() => handleSave("basic")}
-                  disabled={saveLoading}
-                >
-                  {saveLoading ? "Saving..." : "Save"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleCancel("basic")}
-                  disabled={saveLoading}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p>
-                <strong>Name:</strong> {user.name}
-              </p>
-              <p>
-                <strong>Email:</strong> {user.email}
-              </p>
-              <p>
-                <strong>Phone:</strong> {user.phone}
-              </p>
-              <p>
-                <strong>Role:</strong> {user.role}
-              </p>
-              <p>
-                <strong>District:</strong> {user.district}
-              </p>
-            </>
-          )}
-        </Card.Body>
-      </Card>
-
-      {/* Additional Info */}
-      <Card className="mb-4 shadow-sm">
-        <Card.Header className="fw-bold d-flex justify-content-between align-items-center">
-          <span className="fs-4">Additional Info</span>
-          {!editMode.additional && (
-            <Button
-              variant="outline-primary"
-              size="sm"
-              onClick={() => handleEdit("additional")}
-            >
-              Edit
-            </Button>
-          )}
-        </Card.Header>
-        <Card.Body>
-          {editMode.additional ? (
-            <>
-              {userRole === "farmer" ? (
-                <>
-                  <div className="mb-2">
-                    <label className="form-label mb-0">
-                      <strong>Farm Size (acres):</strong>
-                    </label>
-                    <input
-                      type="number"
-                      className="form-control form-control-sm"
-                      name="farm_size"
-                      value={
-                        isFarmerDetails(editAdditional)
-                          ? editAdditional.farm_size || ""
-                          : ""
-                      }
-                      onChange={handleAdditionalChange}
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label mb-0">
-                      <strong>Main Crop:</strong>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control form-control-sm"
-                      name="main_crop"
-                      value={
-                        isFarmerDetails(editAdditional)
-                          ? editAdditional.main_crop || ""
-                          : ""
-                      }
-                      onChange={handleAdditionalChange}
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label mb-0">
-                      <strong>Irrigation Type:</strong>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control form-control-sm"
-                      name="irrigation_type"
-                      value={
-                        isFarmerDetails(editAdditional)
-                          ? editAdditional.irrigation_type || ""
-                          : ""
-                      }
-                      onChange={handleAdditionalChange}
-                    />
-                  </div>
-                </>
-              ) : userRole === "supplier" ? (
-                <>
-                  <div className="mb-2">
-                    <label className="form-label mb-0">
-                      <strong>Shop Name:</strong>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control form-control-sm"
-                      name="shop_name"
-                      value={
-                        isSupplierDetails(editAdditional)
-                          ? editAdditional.shop_name || ""
-                          : ""
-                      }
-                      onChange={handleAdditionalChange}
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label mb-0">
-                      <strong>Address:</strong>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control form-control-sm"
-                      name="address"
-                      value={
-                        isSupplierDetails(editAdditional)
-                          ? editAdditional.address || ""
-                          : ""
-                      }
-                      onChange={handleAdditionalChange}
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label mb-0">
-                      <strong>Latitude:</strong>
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      className="form-control form-control-sm"
-                      name="latitude"
-                      value={
-                        isSupplierDetails(editAdditional)
-                          ? editAdditional.latitude || ""
-                          : ""
-                      }
-                      onChange={handleAdditionalChange}
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label mb-0">
-                      <strong>Longitude:</strong>
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      className="form-control form-control-sm"
-                      name="longitude"
-                      value={
-                        isSupplierDetails(editAdditional)
-                          ? editAdditional.longitude || ""
-                          : ""
-                      }
-                      onChange={handleAdditionalChange}
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label mb-0">
-                      <strong>Approved:</strong>
-                    </label>
-                    <select
-                      className="form-control form-control-sm"
-                      name="approved"
-                      value={
-                        isSupplierDetails(editAdditional)
-                          ? editAdditional.approved
-                            ? "Yes"
-                            : "No"
-                          : "No"
-                      }
-                      onChange={handleAdditionalChange}
-                    >
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
-                    </select>
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label mb-0">
-                      <strong>Service Areas:</strong>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control form-control-sm"
-                      name="service_areas"
-                      value={
-                        isSupplierDetails(editAdditional) &&
-                        Array.isArray(editAdditional.service_areas)
-                          ? editAdditional.service_areas.join(", ")
-                          : ""
-                      }
-                      onChange={handleAdditionalChange}
-                      placeholder="Enter areas separated by commas"
-                    />
-                  </div>
-                </>
-              ) : null}
-              <div className="d-flex gap-2 mt-2">
-                <Button
-                  size="sm"
-                  variant="success"
-                  onClick={() => handleSave("additional")}
-                  disabled={saveLoading}
-                >
-                  {saveLoading ? "Saving..." : "Save"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleCancel("additional")}
-                  disabled={saveLoading}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              {userRole === "farmer" ? (
-                <>
-                  <p>
-                    <strong>Farm Size:</strong>{" "}
-                    {isFarmerDetails(additionalInfo) &&
-                    additionalInfo.farm_size ? (
-                      `${additionalInfo.farm_size} acres`
-                    ) : (
-                      <span className="text-muted">Please enter details</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Main Crop:</strong>{" "}
-                    {(isFarmerDetails(additionalInfo) &&
-                      additionalInfo.main_crop) || (
-                      <span className="text-muted">Please enter details</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Irrigation Type:</strong>{" "}
-                    {(isFarmerDetails(additionalInfo) &&
-                      additionalInfo.irrigation_type) || (
-                      <span className="text-muted">Please enter details</span>
-                    )}
-                  </p>
-                </>
-              ) : userRole === "supplier" ? (
-                <>
-                  <p>
-                    <strong>Shop Name:</strong>{" "}
-                    {(isSupplierDetails(additionalInfo) &&
-                      additionalInfo.shop_name) || (
-                      <span className="text-muted">Please enter details</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Address:</strong>{" "}
-                    {(isSupplierDetails(additionalInfo) &&
-                      additionalInfo.address) || (
-                      <span className="text-muted">Please enter details</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Latitude:</strong>{" "}
-                    {(isSupplierDetails(additionalInfo) &&
-                      additionalInfo.latitude) || (
-                      <span className="text-muted">Please enter details</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Longitude:</strong>{" "}
-                    {(isSupplierDetails(additionalInfo) &&
-                      additionalInfo.longitude) || (
-                      <span className="text-muted">Please enter details</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Approved:</strong>{" "}
-                    {isSupplierDetails(additionalInfo) &&
-                    additionalInfo.approved !== undefined ? (
-                      additionalInfo.approved ? (
-                        "Yes"
-                      ) : (
-                        "No"
-                      )
-                    ) : (
-                      <span className="text-muted">Please enter details</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Service Areas:</strong>{" "}
-                    {isSupplierDetails(additionalInfo) &&
-                    Array.isArray(additionalInfo.service_areas) &&
-                    additionalInfo.service_areas.length > 0 ? (
-                      additionalInfo.service_areas.join(", ")
-                    ) : (
-                      <span className="text-muted">Please enter details</span>
-                    )}
-                  </p>
-                </>
-              ) : null}
-            </>
-          )}
-        </Card.Body>
-      </Card>
-
-      {/* Extra Cards for Farmer */}
-      {userRole === "farmer" && (
-        <Row className="gy-3">
-          <Col md={6}>
-            {renderHistoryCard("Pest History", [
-              { name: "Rice Leaf Roller", detail: "Chlorpyrifos" },
-              { name: "Stem Borer", detail: "Cartap Hydrochloride" },
-            ])}
-          </Col>
-          <Col md={6}>
-            {renderHistoryCard(
-              "Suppliers Contacted",
-              supplierHistory.length > 0
-                ? supplierHistory.map((contact) => ({
-                    name: contact.shop_name,
-                    detail: formatContactDate(contact.contact_time),
-                  }))
-                : [
-                    {
-                      name: "No contacts yet",
-                      detail: "Start calling suppliers",
-                    },
-                  ]
+        {/* Basic Info Card */}
+        <Card className="mb-4 shadow-sm">
+          <Card.Header className="fw-bold d-flex justify-content-between align-items-center">
+            <span className="fs-4">Basic Info</span>
+            {!editMode.basic && (
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => handleEdit("basic")}
+              >
+                Edit
+              </Button>
             )}
-          </Col>
-        </Row>
-      )}
+          </Card.Header>
+          <Card.Body>
+            {editMode.basic ? (
+              <>
+                <div className="mb-2">
+                  <label className="form-label mb-0">
+                    <strong>Name:</strong>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    name="name"
+                    value={editUser?.name || ""}
+                    onChange={handleUserChange}
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label mb-0">
+                    <strong>Email:</strong>
+                  </label>
+                  <input
+                    type="email"
+                    className="form-control form-control-sm"
+                    name="email"
+                    value={editUser?.email || ""}
+                    disabled
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label mb-0">
+                    <strong>Phone:</strong>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    name="phone"
+                    value={editUser?.phone || ""}
+                    onChange={handleUserChange}
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label mb-0">
+                    <strong>Role:</strong>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    name="role"
+                    value={editUser?.role || ""}
+                    disabled
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label mb-0">
+                    <strong>District:</strong>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    name="district"
+                    value={editUser?.district || ""}
+                    onChange={handleUserChange}
+                  />
+                </div>
+                <div className="d-flex gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant="success"
+                    onClick={() => handleSave("basic")}
+                    disabled={saveLoading}
+                  >
+                    {saveLoading ? "Saving..." : "Save"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleCancel("basic")}
+                    disabled={saveLoading}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p>
+                  <strong>Name:</strong> {user.name}
+                </p>
+                <p>
+                  <strong>Email:</strong> {user.email}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {user.phone}
+                </p>
+                <p>
+                  <strong>Role:</strong> {user.role}
+                </p>
+                <p>
+                  <strong>District:</strong> {user.district}
+                </p>
+              </>
+            )}
+          </Card.Body>
+        </Card>
 
-      {/* Delete Account Button */}
-      <div className="text-center mt-4">
-        <Button
-          className="btn-md btn-danger"
-          onClick={() => setShowDeleteModal(true)}
-        >
-          Delete Account
-        </Button>
-      </div>
+        {/* Additional Info */}
+        <Card className="mb-4 shadow-sm">
+          <Card.Header className="fw-bold d-flex justify-content-between align-items-center">
+            <span className="fs-4">Additional Info</span>
+            {!editMode.additional && (
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => handleEdit("additional")}
+              >
+                Edit
+              </Button>
+            )}
+          </Card.Header>
+          <Card.Body>
+            {editMode.additional ? (
+              <>
+                {userRole === "farmer" ? (
+                  <>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Farm Size (acres):</strong>
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control form-control-sm"
+                        name="farm_size"
+                        value={
+                          isFarmerDetails(editAdditional)
+                            ? editAdditional.farm_size || ""
+                            : ""
+                        }
+                        onChange={handleAdditionalChange}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Main Crop:</strong>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        name="main_crop"
+                        value={
+                          isFarmerDetails(editAdditional)
+                            ? editAdditional.main_crop || ""
+                            : ""
+                        }
+                        onChange={handleAdditionalChange}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Irrigation Type:</strong>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        name="irrigation_type"
+                        value={
+                          isFarmerDetails(editAdditional)
+                            ? editAdditional.irrigation_type || ""
+                            : ""
+                        }
+                        onChange={handleAdditionalChange}
+                      />
+                    </div>
+                  </>
+                ) : userRole === "supplier" ? (
+                  <>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Shop Name:</strong>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        name="shop_name"
+                        value={
+                          isSupplierDetails(editAdditional)
+                            ? editAdditional.shop_name || ""
+                            : ""
+                        }
+                        onChange={handleAdditionalChange}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Address:</strong>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        name="address"
+                        value={
+                          isSupplierDetails(editAdditional)
+                            ? editAdditional.address || ""
+                            : ""
+                        }
+                        onChange={handleAdditionalChange}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Latitude:</strong>
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        className="form-control form-control-sm"
+                        name="latitude"
+                        value={
+                          isSupplierDetails(editAdditional)
+                            ? editAdditional.latitude || ""
+                            : ""
+                        }
+                        onChange={handleAdditionalChange}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Longitude:</strong>
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        className="form-control form-control-sm"
+                        name="longitude"
+                        value={
+                          isSupplierDetails(editAdditional)
+                            ? editAdditional.longitude || ""
+                            : ""
+                        }
+                        onChange={handleAdditionalChange}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Approved:</strong>
+                      </label>
+                      <select
+                        className="form-control form-control-sm"
+                        name="approved"
+                        value={
+                          isSupplierDetails(editAdditional)
+                            ? editAdditional.approved
+                              ? "Yes"
+                              : "No"
+                            : "No"
+                        }
+                        onChange={handleAdditionalChange}
+                      >
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Service Areas:</strong>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        name="service_areas"
+                        value={
+                          isSupplierDetails(editAdditional) &&
+                          Array.isArray(editAdditional.service_areas)
+                            ? editAdditional.service_areas.join(", ")
+                            : ""
+                        }
+                        onChange={handleAdditionalChange}
+                        placeholder="Enter areas separated by commas"
+                      />
+                    </div>
+                  </>
+                ) : null}
+                <div className="d-flex gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant="success"
+                    onClick={() => handleSave("additional")}
+                    disabled={saveLoading}
+                  >
+                    {saveLoading ? "Saving..." : "Save"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleCancel("additional")}
+                    disabled={saveLoading}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                {userRole === "farmer" ? (
+                  <>
+                    <p>
+                      <strong>Farm Size:</strong>{" "}
+                      {isFarmerDetails(additionalInfo) &&
+                      additionalInfo.farm_size ? (
+                        `${additionalInfo.farm_size} acres`
+                      ) : (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
+                    <p>
+                      <strong>Main Crop:</strong>{" "}
+                      {(isFarmerDetails(additionalInfo) &&
+                        additionalInfo.main_crop) || (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
+                    <p>
+                      <strong>Irrigation Type:</strong>{" "}
+                      {(isFarmerDetails(additionalInfo) &&
+                        additionalInfo.irrigation_type) || (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
+                  </>
+                ) : userRole === "supplier" ? (
+                  <>
+                    <p>
+                      <strong>Shop Name:</strong>{" "}
+                      {(isSupplierDetails(additionalInfo) &&
+                        additionalInfo.shop_name) || (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
+                    <p>
+                      <strong>Address:</strong>{" "}
+                      {(isSupplierDetails(additionalInfo) &&
+                        additionalInfo.address) || (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
+                    <p>
+                      <strong>Latitude:</strong>{" "}
+                      {(isSupplierDetails(additionalInfo) &&
+                        additionalInfo.latitude) || (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
+                    <p>
+                      <strong>Longitude:</strong>{" "}
+                      {(isSupplierDetails(additionalInfo) &&
+                        additionalInfo.longitude) || (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
+                    <p>
+                      <strong>Approved:</strong>{" "}
+                      {isSupplierDetails(additionalInfo) &&
+                      additionalInfo.approved !== undefined ? (
+                        additionalInfo.approved ? (
+                          "Yes"
+                        ) : (
+                          "No"
+                        )
+                      ) : (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
+                    <p>
+                      <strong>Service Areas:</strong>{" "}
+                      {isSupplierDetails(additionalInfo) &&
+                      Array.isArray(additionalInfo.service_areas) &&
+                      additionalInfo.service_areas.length > 0 ? (
+                        additionalInfo.service_areas.join(", ")
+                      ) : (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
+                  </>
+                ) : null}
+              </>
+            )}
+          </Card.Body>
+        </Card>
 
-      {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title className="text-danger">Delete Account</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>
-            Are you sure you want to delete your account? This action cannot be
-            undone.
-          </p>
-          <p className="text-muted small">
-            This will permanently delete all your data including profile
-            information, history, and any associated records.
-          </p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancel
+        {/* Extra Cards for Farmer */}
+        {userRole === "farmer" && (
+          <Row className="gy-3">
+            <Col md={6}>
+              {renderHistoryCard("Pest History", [
+                { name: "Rice Leaf Roller", detail: "Chlorpyrifos" },
+                { name: "Stem Borer", detail: "Cartap Hydrochloride" },
+              ])}
+            </Col>
+            <Col md={6}>
+              {renderHistoryCard(
+                "Suppliers Contacted",
+                supplierHistory.length > 0
+                  ? supplierHistory.map((contact) => ({
+                      name: contact.shop_name,
+                      detail: formatContactDate(contact.contact_time),
+                    }))
+                  : [
+                      {
+                        name: "No contacts yet",
+                        detail: "Start calling suppliers",
+                      },
+                    ]
+              )}
+            </Col>
+          </Row>
+        )}
+
+        {/* Account Actions */}
+        <div className="text-center mt-4">
+          <Button
+            className="btn-md btn-primary me-3"
+            onClick={() => setShowPasswordModal(true)}
+          >
+            Change Password
           </Button>
           <Button
-            variant="danger"
-            onClick={handleDeleteAccount}
-            disabled={deleteLoading}
+            className="btn-md btn-danger"
+            onClick={() => setShowDeleteModal(true)}
           >
-            {deleteLoading ? "Deleting..." : "Delete Account"}
+            Delete Account
           </Button>
-        </Modal.Footer>
-      </Modal>
-    </div>
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title className="text-danger">Delete Account</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>
+              Are you sure you want to delete your account? This action cannot
+              be undone.
+            </p>
+            <p className="text-muted small">
+              This will permanently delete all your data including profile
+              information, history, and any associated records.
+            </p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteAccount}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? "Deleting..." : "Delete Account"}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Password Change Modal */}
+        <Modal
+          show={showPasswordModal}
+          onHide={() => setShowPasswordModal(false)}
+        >
+          <Modal.Header closeButton>
+            <Modal.Title>Change Password</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="mb-3">
+              <label className="form-label">Current Password</label>
+              <input
+                type="password"
+                className="form-control"
+                value={passwordData.oldPassword}
+                onChange={(e) =>
+                  setPasswordData({
+                    ...passwordData,
+                    oldPassword: e.target.value,
+                  })
+                }
+                placeholder="Enter current password"
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">New Password</label>
+              <input
+                type="password"
+                className="form-control"
+                value={passwordData.newPassword}
+                onChange={(e) =>
+                  setPasswordData({
+                    ...passwordData,
+                    newPassword: e.target.value,
+                  })
+                }
+                placeholder="Enter new password"
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Confirm New Password</label>
+              <input
+                type="password"
+                className="form-control"
+                value={passwordData.confirmPassword}
+                onChange={(e) =>
+                  setPasswordData({
+                    ...passwordData,
+                    confirmPassword: e.target.value,
+                  })
+                }
+                placeholder="Confirm new password"
+              />
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => setShowPasswordModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handlePasswordChange}
+              disabled={passwordLoading}
+            >
+              {passwordLoading ? "Updating..." : "Update Password"}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      </div>
+
+      {/* Toast */}
+      <ToastContainer
+        className="p-3"
+        position="top-center"
+        style={{ zIndex: 9999 }}
+      >
+        <Toast
+          onClose={() => setToast((t) => ({ ...t, show: false }))}
+          show={toast.show}
+          bg={toast.variant}
+          autohide
+          delay={3000}
+        >
+          <Toast.Body className="text-center text-white">
+            {toast.message}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
+    </>
   );
 };
 
