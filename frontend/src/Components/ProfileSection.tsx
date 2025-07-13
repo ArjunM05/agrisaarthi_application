@@ -11,6 +11,7 @@ import {
   ToastContainer,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 type User = {
   id: string;
@@ -58,6 +59,11 @@ const ProfileSection: React.FC = () => {
     oldPassword: "",
     newPassword: "",
     confirmPassword: "",
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    oldPassword: false,
+    newPassword: false,
+    confirmPassword: false,
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [toast, setToast] = useState({
@@ -216,6 +222,11 @@ const ProfileSection: React.FC = () => {
           oldPassword: "",
           newPassword: "",
           confirmPassword: "",
+        });
+        setShowPasswords({
+          oldPassword: false,
+          newPassword: false,
+          confirmPassword: false,
         });
         // Logout after successful password change
         setTimeout(() => {
@@ -1004,10 +1015,10 @@ const ProfileSection: React.FC = () => {
             <Modal.Title>Change Password</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <div className="mb-3">
+            <div className="mb-3 position-relative">
               <label className="form-label">Current Password</label>
               <input
-                type="password"
+                type={showPasswords.oldPassword ? "text" : "password"}
                 className="form-control"
                 value={passwordData.oldPassword}
                 onChange={(e) =>
@@ -1018,11 +1029,23 @@ const ProfileSection: React.FC = () => {
                 }
                 placeholder="Enter current password"
               />
+              <span
+                className="position-absolute top-50 end-0 me-3"
+                style={{ cursor: "pointer" }}
+                onClick={() =>
+                  setShowPasswords({
+                    ...showPasswords,
+                    oldPassword: !showPasswords.oldPassword,
+                  })
+                }
+              >
+                {showPasswords.oldPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
             </div>
-            <div className="mb-3">
+            <div className="mb-3 position-relative">
               <label className="form-label">New Password</label>
               <input
-                type="password"
+                type={showPasswords.newPassword ? "text" : "password"}
                 className="form-control"
                 value={passwordData.newPassword}
                 onChange={(e) =>
@@ -1033,11 +1056,23 @@ const ProfileSection: React.FC = () => {
                 }
                 placeholder="Enter new password"
               />
+              <span
+                className="position-absolute top-50 end-0 me-3"
+                style={{ cursor: "pointer" }}
+                onClick={() =>
+                  setShowPasswords({
+                    ...showPasswords,
+                    newPassword: !showPasswords.newPassword,
+                  })
+                }
+              >
+                {showPasswords.newPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
             </div>
-            <div className="mb-3">
+            <div className="mb-3 position-relative">
               <label className="form-label">Confirm New Password</label>
               <input
-                type="password"
+                type={showPasswords.confirmPassword ? "text" : "password"}
                 className="form-control"
                 value={passwordData.confirmPassword}
                 onChange={(e) =>
@@ -1048,6 +1083,18 @@ const ProfileSection: React.FC = () => {
                 }
                 placeholder="Confirm new password"
               />
+              <span
+                className="position-absolute top-50 end-0 me-3"
+                style={{ cursor: "pointer" }}
+                onClick={() =>
+                  setShowPasswords({
+                    ...showPasswords,
+                    confirmPassword: !showPasswords.confirmPassword,
+                  })
+                }
+              >
+                {showPasswords.confirmPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
             </div>
           </Modal.Body>
           <Modal.Footer>

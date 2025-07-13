@@ -1,6 +1,6 @@
 // src/Components/FarmerDashboard.tsx
 import { useEffect, useState } from "react";
-import { Card, Modal, Button } from "react-bootstrap";
+import { Card, Modal, Button, Alert } from "react-bootstrap";
 import {
   FaCloudSun,
   FaThermometerHalf,
@@ -19,6 +19,12 @@ import pest2 from "../assets/pest2.jpg";
 import pest3 from "../assets/pest3.jpg";
 import pest4 from "../assets/pest4.jpg";
 
+type FarmerDetails = {
+  farm_size?: number;
+  main_crop?: string;
+  irrigation_type?: string;
+};
+
 const FarmerDashboard = () => {
   const user_name = localStorage.getItem("user_name");
   const user_id = localStorage.getItem("user_id");
@@ -31,6 +37,8 @@ const FarmerDashboard = () => {
   const [supplierDetails, setSupplierDetails] = useState<any>(null);
   const [schemes, setSchemes] = useState<string[]>([]);
   const [schemesLoading, setSchemesLoading] = useState(true);
+  const [showAlert, setShowAlert] = useState(false);
+  const [additionalInfo, setAdditionalInfo] = useState<FarmerDetails>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -89,7 +97,29 @@ const FarmerDashboard = () => {
     } else {
       setSchemesLoading(false);
     }
+
+    // Fetch additional info from backend
+    if (user_id && user_id !== "undefined" && user_id !== "null") {
+      fetch(`http://localhost:5001/user_info/${user_id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.details) {
+            setAdditionalInfo(data.details);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching user info:", error);
+        });
+    }
   }, [user_id, user_district]);
+
+  // Check for incomplete fields
+  useEffect(() => {
+    if (additionalInfo) {
+      const hasEmpty = Object.values(additionalInfo).some((v) => !v);
+      setShowAlert(hasEmpty);
+    }
+  }, [additionalInfo]);
 
   const recentPests = [
     { img: pest1, pest: "Flea Beetle", pesticide: "Imidacloprid" },
@@ -170,6 +200,19 @@ const FarmerDashboard = () => {
   return (
     <>
       <h3 className="mb-4">Welcome, {user_name} 👋</h3>
+
+      {showAlert && (
+        <Alert
+          variant="warning"
+          className="mb-4"
+          style={{ zIndex: 9999 }}
+          // dismissible
+          // onClose={() => setShowAlert(false)}
+        >
+          Please complete your additional information to get the best
+          recommendations. Go to <a href="/farmer/profile">Profile.</a>
+        </Alert>
+      )}
 
       <div className="row mb-4">
         {expanded ? (
@@ -367,7 +410,10 @@ const FarmerDashboard = () => {
               <a
                 href="#"
                 className="text-decoration-none small"
-                onClick={handleViewHistory}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent parent clicks
+                  handleViewHistory();
+                }}
               >
                 View history →
               </a>

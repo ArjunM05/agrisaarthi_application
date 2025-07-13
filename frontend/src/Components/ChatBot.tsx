@@ -29,14 +29,19 @@ const ChatBot = () => {
         display: none !important;
       }
 
-      /* Ensure the webchat container is visible */
+      /* Ensure the webchat container is properly positioned */
       #webchat {
         position: fixed !important;
-        bottom: 90px !important;
+        bottom: 100px !important;
         right: 20px !important;
         width: 400px !important;
         height: 500px !important;
         z-index: 9999 !important;
+        display: none !important;
+      }
+
+      /* Show webchat when it should be visible */
+      #webchat.show {
         display: block !important;
       }
 
@@ -70,9 +75,10 @@ const ChatBot = () => {
     webchatContainer.style.width = "400px";
     webchatContainer.style.height = "500px";
     webchatContainer.style.position = "fixed";
-    webchatContainer.style.bottom = "90px";
+    webchatContainer.style.bottom = "100px";
     webchatContainer.style.right = "20px";
     webchatContainer.style.zIndex = "9999";
+    webchatContainer.style.display = "none"; // Start hidden
     document.body.appendChild(webchatContainer);
 
     // Load Botpress script
@@ -90,6 +96,22 @@ const ChatBot = () => {
           window.botpress.on("webchat:ready", () => {
             console.log("Botpress webchat ready");
             setIsInitialized(true);
+          });
+
+          // Listen for when the chat is closed via the dismiss button
+          window.botpress.on("webchat:closed", () => {
+            console.log("Botpress webchat closed");
+            setIsOpen(false);
+
+            // Hide the webchat container
+            const userId = localStorage.getItem("user_id");
+            const webchatContainer = document.getElementById(
+              `webchat-${userId || "anonymous"}`
+            );
+            if (webchatContainer) {
+              webchatContainer.style.display = "none";
+              webchatContainer.classList.remove("show");
+            }
           });
 
           window.botpress.init({
@@ -154,22 +176,28 @@ const ChatBot = () => {
     console.log("Botpress available:", !!window.botpress);
     if (window.botpress) {
       try {
+        const userId = localStorage.getItem("user_id");
+        const webchatContainer = document.getElementById(
+          `webchat-${userId || "anonymous"}`
+        );
+
         if (isOpen) {
           window.botpress.close();
           setIsOpen(false);
           console.log("Chat closed");
+          // Hide the webchat container
+          if (webchatContainer) {
+            webchatContainer.style.display = "none";
+            webchatContainer.classList.remove("show");
+          }
         } else {
           window.botpress.open();
           setIsOpen(true);
           console.log("Chat opened successfully");
-
-          // Force show the webchat container
-          const userId = localStorage.getItem("user_id");
-          const webchatContainer = document.getElementById(
-            `webchat-${userId || "anonymous"}`
-          );
+          // Show the webchat container
           if (webchatContainer) {
             webchatContainer.style.display = "block";
+            webchatContainer.classList.add("show");
             webchatContainer.style.visibility = "visible";
             webchatContainer.style.opacity = "1";
           }
@@ -183,7 +211,15 @@ const ChatBot = () => {
   };
 
   return (
-    <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 1000 }}>
+    <div
+      className="position-fixed p-3"
+      style={{
+        zIndex: 1000,
+        bottom: "20px",
+        right: "20px",
+        pointerEvents: "auto",
+      }}
+    >
       <div
         className="bg-success rounded-circle d-flex align-items-center justify-content-center shadow"
         style={{

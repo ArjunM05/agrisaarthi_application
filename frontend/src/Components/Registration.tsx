@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Toast, ToastContainer } from "react-bootstrap";
 import { useNavigate } from "react-router";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Registration = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const Registration = () => {
     role: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [toastShow, setToastShow] = useState(false);
   const [toastMessage, setToastMessage] = useState({
     title: "",
@@ -156,7 +158,7 @@ const Registration = () => {
               />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-4 position-relative">
               <label
                 htmlFor="password"
                 className="form-label text-uppercase fw-medium text-muted small"
@@ -165,12 +167,20 @@ const Registration = () => {
               </label>
               <input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={(e) => handleInputChange("password", e.target.value)}
+                placeholder="Enter your password"
                 className="form-control"
                 required
               />
+              <span
+                className="position-absolute top-50 end-0 me-3"
+                style={{ cursor: "pointer" }}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
             </div>
 
             <div className="mb-3">
@@ -218,10 +228,10 @@ const Registration = () => {
                 id="role"
                 value={formData.role}
                 onChange={(e) => handleInputChange("role", e.target.value)}
-                className="form-control"
+                className="form-select"
                 required
               >
-                <option value="" disabled hidden></option>
+                <option selected>Select Role</option>
                 <option value="farmer">Farmer</option>
                 <option value="supplier">Supplier</option>
               </select>

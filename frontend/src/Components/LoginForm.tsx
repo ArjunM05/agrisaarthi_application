@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Toast, ToastContainer, Modal, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [toastShow, setToastShow] = useState(false);
   const [toastMessage, setToastMessage] = useState({
@@ -19,6 +21,10 @@ const LoginForm = () => {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showForgotPasswords, setShowForgotPasswords] = useState({
+    newPassword: false,
+    confirmPassword: false,
+  });
   const [otpSent, setOtpSent] = useState(false);
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
@@ -139,7 +145,11 @@ const LoginForm = () => {
       const data = await response.json();
 
       if (response.ok && data.status === "success") {
-        showToast("Success", data.message, "success");
+        showToast(
+          "Success",
+          data.message + ". Kindly check Spam Folder.",
+          "success"
+        );
         setOtpSent(true);
       } else {
         showToast("Error", data.message || "Failed to send OTP", "danger");
@@ -186,6 +196,14 @@ const LoginForm = () => {
         setOtp("");
         setNewPassword("");
         setConfirmPassword("");
+        setShowForgotPasswords({
+          newPassword: false,
+          confirmPassword: false,
+        });
+        setShowForgotPasswords({
+          newPassword: false,
+          confirmPassword: false,
+        });
       } else {
         showToast(
           "Error",
@@ -238,11 +256,11 @@ const LoginForm = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               className="form-control form-control-lg"
-              autoComplete="username"
+              // autoComplete="username"
             />
           </div>
 
-          <div className="mb-4">
+          <div className="mb-4 position-relative">
             <label
               htmlFor="password"
               className="form-label text-uppercase fw-medium text-muted small"
@@ -251,13 +269,20 @@ const LoginForm = () => {
             </label>
             <input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               className="form-control form-control-lg"
-              autoComplete="current-password"
+              // autoComplete="current-password"
             />
+            <span
+              className="position-absolute top-50 end-0 me-3"
+              style={{ cursor: "pointer" }}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
           </div>
           <div className="row g-3">
             <div className="col-md-12">
@@ -274,7 +299,7 @@ const LoginForm = () => {
             <div className="col-md-6">
               <button
                 onClick={() => handleRegister()}
-                className="btn btn-outline-success btn-md w-100 rounded-pill"
+                className="btn btn-outline-success btn-md w-100 rounded-pill fw-medium"
                 // style={{ height: "48px" }}
               >
                 REGISTER
@@ -283,7 +308,7 @@ const LoginForm = () => {
             <div className="col-md-6">
               <button
                 onClick={handleForgotPassword}
-                className="btn btn-outline-secondary btn-md w-100 rounded-pill"
+                className="btn btn-outline-success btn-md w-100 rounded-pill fw-medium"
                 // style={{ height: "48px" }}
               >
                 FORGOT PASSWORD
@@ -319,7 +344,8 @@ const LoginForm = () => {
           ) : (
             <div>
               <p className="text-muted mb-3">
-                Enter the OTP sent to your email and your new password.
+                Enter the OTP sent to your email and your new password. If not
+                in Inbox, kindly check Spam Folder.
               </p>
               <div className="mb-3">
                 <label className="form-label">OTP</label>
@@ -332,25 +358,55 @@ const LoginForm = () => {
                   maxLength={6}
                 />
               </div>
-              <div className="mb-3">
+              <div className="mb-3 position-relative">
                 <label className="form-label">New Password</label>
                 <input
-                  type="password"
+                  type={showForgotPasswords.newPassword ? "text" : "password"}
                   className="form-control"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter new password"
                 />
+                <span
+                  className="position-absolute top-50 end-0 me-3"
+                  style={{ cursor: "pointer" }}
+                  onClick={() =>
+                    setShowForgotPasswords((prev) => ({
+                      ...prev,
+                      newPassword: !prev.newPassword,
+                    }))
+                  }
+                >
+                  {showForgotPasswords.newPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
               </div>
-              <div className="mb-3">
+              <div className="mb-3 position-relative">
                 <label className="form-label">Confirm New Password</label>
                 <input
-                  type="password"
+                  type={
+                    showForgotPasswords.confirmPassword ? "text" : "password"
+                  }
                   className="form-control"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
                 />
+                <span
+                  className="position-absolute top-50 end-0 me-3"
+                  style={{ cursor: "pointer" }}
+                  onClick={() =>
+                    setShowForgotPasswords((prev) => ({
+                      ...prev,
+                      confirmPassword: !prev.confirmPassword,
+                    }))
+                  }
+                >
+                  {showForgotPasswords.confirmPassword ? (
+                    <FaEyeSlash />
+                  ) : (
+                    <FaEye />
+                  )}
+                </span>
               </div>
             </div>
           )}
@@ -361,7 +417,7 @@ const LoginForm = () => {
           </Button>
           {!otpSent ? (
             <Button
-              variant="primary"
+              variant="success"
               onClick={handleSendOtp}
               disabled={forgotPasswordLoading}
             >

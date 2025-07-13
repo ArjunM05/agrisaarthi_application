@@ -1,6 +1,6 @@
 // src/Components/Pesticides.tsx
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Modal, Button } from "react-bootstrap";
 import supabase from "../utils/supabase";
 import ChatBot from "./ChatBot";
@@ -30,6 +30,25 @@ const Pesticides: React.FC = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
     null
   );
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle clicks outside the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,6 +111,7 @@ const Pesticides: React.FC = () => {
     setSelected(opt);
     setSearchTerm(`${opt.pesticide} (${opt.pest})`);
     setFilteredOptions([]);
+    setIsDropdownOpen(false);
     // Fetch suppliers for the selected pesticide
     fetchSuppliersForPesticide(opt.pesticide);
   };
@@ -140,33 +160,49 @@ const Pesticides: React.FC = () => {
   return (
     <div className="container my-4">
       <h3 className="mb-3">Search Pesticides</h3>
-      <input
-        type="text"
-        className="form-control mb-2"
-        placeholder="Search by pest or pesticide..."
-        autoComplete="off"
-        value={searchTerm}
-        onChange={(e) => {
-          setSearchTerm(e.target.value);
-          setSelected(null);
-          setSuppliers([]);
-        }}
-      />
 
-      {filteredOptions.length > 0 && (
-        <ul className="list-group mb-3">
-          {filteredOptions.map((opt, idx) => (
-            <li
-              key={idx}
-              className="list-group-item list-group-item-action"
-              onClick={() => handleSelect(opt)}
-              style={{ cursor: "pointer" }}
-            >
-              {opt.pesticide} ({opt.pest})
-            </li>
-          ))}
-        </ul>
-      )}
+      <div ref={dropdownRef} className="position-relative">
+        <input
+          type="text"
+          className="form-control mb-2"
+          placeholder="Search by pest or pesticide..."
+          autoComplete="off"
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setSelected(null);
+            setSuppliers([]);
+            setIsDropdownOpen(true);
+          }}
+          onFocus={() => {
+            if (filteredOptions.length > 0) {
+              setIsDropdownOpen(true);
+            }
+          }}
+        />
+
+        {isDropdownOpen && filteredOptions.length > 0 && (
+          <ul
+            className="list-group position-absolute w-100 dropdown-menu"
+            style={{
+              zIndex: 1000,
+              maxHeight: "40vh",
+              overflowY: "auto",
+            }}
+          >
+            {filteredOptions.map((opt, idx) => (
+              <li
+                key={idx}
+                className="list-group-item list-group-item-action"
+                onClick={() => handleSelect(opt)}
+                style={{ cursor: "pointer" }}
+              >
+                {opt.pesticide} ({opt.pest})
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {searchTerm && filteredOptions.length === 0 && !selected && (
         <div className="alert alert-warning">

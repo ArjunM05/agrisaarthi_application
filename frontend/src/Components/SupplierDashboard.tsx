@@ -1,6 +1,6 @@
 // src/Components/FarmerDashboard.tsx
 import { useEffect, useState } from "react";
-import { Card } from "react-bootstrap";
+import { Card, Alert } from "react-bootstrap";
 import {
   FaCloudSun,
   FaThermometerHalf,
@@ -12,10 +12,22 @@ import {
 } from "react-icons/fa";
 import ChatBot from "./ChatBot";
 
+type SupplierDetails = {
+  shop_name?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  approved?: boolean;
+  service_areas?: string[];
+};
+
 const SupplierDashboard = () => {
   const [weather, setWeather] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
   const userName = localStorage.getItem("user_name");
+  const userId = localStorage.getItem("user_id");
+  const [showAlert, setShowAlert] = useState(false);
+  const [additionalInfo, setAdditionalInfo] = useState<SupplierDetails>({});
 
   useEffect(() => {
     fetch(
@@ -23,13 +35,48 @@ const SupplierDashboard = () => {
     )
       .then((res) => res.json())
       .then((data) => setWeather(data));
-  }, []);
+
+    // Fetch additional info from backend
+    if (userId && userId !== "undefined" && userId !== "null") {
+      fetch(`http://localhost:5001/user_info/${userId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.details) {
+            setAdditionalInfo(data.details);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching user info:", error);
+        });
+    }
+  }, [userId]);
+
+  // Check for incomplete fields
+  useEffect(() => {
+    if (additionalInfo) {
+      const hasEmpty = Object.values(additionalInfo).some((v) => !v);
+      setShowAlert(hasEmpty);
+    }
+  }, [additionalInfo]);
 
   const toggleExpanded = () => setExpanded(!expanded);
 
   return (
     <>
       <h3 className="mb-4">Welcome, {userName} 👋</h3>
+
+      {showAlert && (
+        <Alert
+          variant="warning"
+          className="mb-4"
+          style={{ zIndex: 9999 }}
+          // dismissible
+          // onClose={() => setShowAlert(false)}
+        >
+          Please complete your additional information to get the best
+          recommendations. Go to <a href="/supplier/profile">Profile.</a>
+        </Alert>
+      )}
 
       <div className="row mb-4">
         {expanded ? (

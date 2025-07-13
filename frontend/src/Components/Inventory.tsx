@@ -1,5 +1,5 @@
 // src/components/SupplierInventory.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Modal,
   Button,
@@ -41,10 +41,29 @@ const SupplierInventory = () => {
     message: "",
     variant: "success",
   });
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Get user info from localStorage
   const userName = localStorage.getItem("user_name") || "";
   const userId = localStorage.getItem("user_id");
+
+  // Handle clicks outside the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchPesticides = async () => {
@@ -99,21 +118,23 @@ const SupplierInventory = () => {
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredOptions([]);
+      setIsDropdownOpen(false);
       return;
     }
     const lower = searchTerm.toLowerCase();
-    setFilteredOptions(
-      allOptions.filter(
-        (opt) =>
-          opt.pesticide.toLowerCase().includes(lower) ||
-          opt.pest.toLowerCase().includes(lower)
-      )
+    const filtered = allOptions.filter(
+      (opt) =>
+        opt.pesticide.toLowerCase().includes(lower) ||
+        opt.pest.toLowerCase().includes(lower)
     );
+    setFilteredOptions(filtered);
+    setIsDropdownOpen(filtered.length > 0);
   }, [searchTerm, allOptions]);
 
   const handleOptionClick = (opt: PesticideOption) => {
     setSelectedOption(opt);
     setShowModal(true);
+    setIsDropdownOpen(false);
   };
 
   const handleSave = async () => {
@@ -226,26 +247,54 @@ const SupplierInventory = () => {
   return (
     <div className="container my-4">
       <h4 className="mb-3">Manage Inventory</h4>
-      <input
-        type="text"
-        className="form-control mb-2"
-        placeholder="Search pesticide or pest..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-      {filteredOptions.length > 0 && (
-        <ul className="list-group mb-3">
-          {filteredOptions.map((opt, i) => (
-            <li
-              key={i}
-              className="list-group-item list-group-item-action"
-              onClick={() => handleOptionClick(opt)}
-              style={{ cursor: "pointer" }}
-            >
-              {opt.pesticide} ({opt.pest})
-            </li>
-          ))}
-        </ul>
+
+      <div ref={dropdownRef} className="position-relative">
+        <input
+          type="text"
+          className="form-control mb-2"
+          placeholder="Search pesticide or pest..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onFocus={() => {
+            if (filteredOptions.length > 0) {
+              setIsDropdownOpen(true);
+            }
+          }}
+        />
+
+        {isDropdownOpen && filteredOptions.length > 0 && (
+          <ul
+            className="list-group position-absolute w-100 dropdown-menu"
+            style={{
+              zIndex: 1000,
+              maxHeight: "35vh",
+              overflowY: "auto",
+            }}
+          >
+            {filteredOptions.map((opt, i) => (
+              <li
+                key={i}
+                className="list-group-item list-group-item-action"
+                onClick={() => handleOptionClick(opt)}
+                style={{ cursor: "pointer" }}
+              >
+                {opt.pesticide} ({opt.pest})
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* No matches found message */}
+      {searchTerm && filteredOptions.length === 0 && !isDropdownOpen && (
+        <div className="alert alert-warning mb-3">
+          No matches found for "{searchTerm}".
+        </div>
+      )}
+
+      {/* Add spacing when dropdown is open */}
+      {isDropdownOpen && (
+        <div style={{ height: "35vh", marginBottom: "1rem" }}></div>
       )}
 
       {/* Inventory List */}
