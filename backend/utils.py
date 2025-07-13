@@ -7,6 +7,9 @@ import string
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta
+import weatherapi
+from weatherapi.rest import ApiException
+from pprint import pprint
 
 from config import db
 
@@ -15,10 +18,15 @@ load_dotenv()
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 SENDGRID_SENDER_EMAIL = os.getenv("SENDGRID_SENDER_EMAIL")
 
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
+
 if not SENDGRID_API_KEY:
     raise ValueError("SENDGRID_API_KEY not found in environment variables.")
 if not SENDGRID_SENDER_EMAIL:
     raise ValueError("SENDGRID_SENDER_EMAIL not found in environment variables.")
+
+configuration = weatherapi.Configuration()
+configuration.api_key['key'] = WEATHER_API_KEY
 
 def register_user(name: str, email: str, phone: str, password: str, user_type: str, location: str):
     """
@@ -371,49 +379,50 @@ def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence:
         print(f"Error logging pest detection: {e}")
         return False
     
-def update_weather_data(location: str, weather_data: dict, schemes: str):
+def update_weather_data(location: str):
     """
     Updates or inserts weather data and associated schemes for a specific location in the cache.
 
     Args:
         location (str): The geographical location (e.g., city name, coordinates string).
-        weather_data (dict): The weather data in JSON format (will be stored as JSONB).
-        schemes (str): Associated farming schemes or recommendations.
     """
-    if not location or not weather_data or not schemes:
-        print("Error: Location, weather data and schemes are required.")
+    if not location:
+        print("Error: Location is required.")
         return False
     try:
-        result = db.table('weather_scheme_cache').upsert({
-            'location': location,
-            'weather_data': weather_data,
-            'schemes': schemes
-        }, on_conflict="location").execute()
-        if result.data:
-            print(f"Weather data updated for {location}.")
-            return True
+        current_time = datetime.now().replace(tzinfo=None)
+        response = db.table('weather_scheme_cache').select('weather_data,updated_at').eq('location', location).limit(1).execute()
+        if response.data:
+            stored_time = datetime.fromisoformat(response.data[0]['updated_at'])
+            if stored_time.tzinfo is not None:
+                stored_time = stored_time.replace(tzinfo=None)
+            if current_time - stored_time < timedelta(minutes=30):
+                print(f"Weather data is up to date for {location}.")
+                return response.data[0]
         else:
-            print(f"Error: Failed to update/insert weather data in database.")
-            return False
-    except Exception as e:
-        print(f"Error updating/inserting weather data cache: {e}")
-        return False
-
-def get_weather_data(location: str):
-    """
-    Retrieves cached weather data for a given location.
-
-    Args:
-        location (str): The geographical location (e.g., city name, coordinates string).
-    """
-    try:
-        result = db.table('weather_scheme_cache').select('*').eq('location', location).limit(1).execute()
-        if result.data:
-            return result.data[0]
-        else:
+            api_instance = weatherapi.APIsApi(weatherapi.ApiClient(configuration))
+            try:
+                api_response = api_instance.forecast_weather(q=location, days=3)
+            except ApiException as e:
+                print("Exception when calling APIsApi->forecast_weather: %s\n" % e)
+                return None
+        try:
+            result = db.table('weather_scheme_cache').upsert({
+                'location': location,
+                'weather_data': api_response,
+                'updated_at': datetime.now().replace(tzinfo=None).isoformat()
+            }, on_conflict="location").execute()
+            if result.data:
+                print(f"Weather data updated for {location}.")
+                return result.data[0]
+            else:
+                print(f"Error: Failed to update/insert weather data in database.")
+                return None     
+        except Exception as e:
+            print(f"Error updating/inserting weather data cache: {e}")
             return None
     except Exception as e:
-        print(f"Error retrieving weather data: {e}")
+        print(f"Error getting weather data cache: {e}")
         return None
 
 def get_schemes_by_location(location: str):
