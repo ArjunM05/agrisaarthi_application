@@ -4,7 +4,7 @@ from flask_cors import CORS
 from config import app
 from utils import (
     register_user, login_user, update_user_profile, update_supplier_details, update_farmer_details, update_admin_details,
-    submit_feedback, log_sms_interaction, log_pest_detection, update_weather_data, get_weather_data, get_schemes_by_location,
+    submit_feedback, log_sms_interaction, log_pest_detection, update_weather_data, get_schemes_by_location,
     get_user_name, get_last_4_pest_images, get_pest_history, get_last_contacted_suppliers,
     get_supplier_inventory, update_inventory, get_user_info, delete_account, get_supplier_details, call_supplier, update_password,
     forgot_password, verify_otp_and_reset_password
@@ -126,30 +126,19 @@ def pest_detection_log_route():
     else:
         return jsonify({"error": "Failed to log pest detection"}), 400
     
-@app.route('/weather_cache', methods=['POST'])
-def weather_cache_route():
-    data = request.get_json()
-    location = data.get('location')
-    weather_data = data.get('weather_data')
-    schemes = data.get('schemes')
 
-    if update_weather_data(location, weather_data, schemes):
-        return jsonify({"message": "Weather cache updated"}), 201
-    else:
-        return jsonify({"error": "Failed to update weather cache"}), 400
 
-@app.route('/weather_cache/<location>', methods=['GET'])
+@app.route('/weather_data/<location>', methods=['GET'])
 def get_weather_cache_route(location):
-    cache_entry = get_weather_data(location)
-    if cache_entry:
+    weather_response = update_weather_data(location)
+    if weather_response:
         return jsonify({
-            "location": cache_entry.get("location"),
-            "weather_data": cache_entry.get("weather_data"),
-            "schemes": cache_entry.get("schemes"),
-            "updated_at": cache_entry.get("updated_at")
+            "location": weather_response.get("location"),
+            "weather_data": weather_response.get("weather_data"),
+            "updated_at": weather_response.get("updated_at")
         }), 200
     else:
-        return jsonify({"error": "Location not found in cache"}), 404
+        return jsonify({'error': 'Weather data not found'}), 404
 
 
 @app.route('/schemes/<location>', methods=['GET'])
