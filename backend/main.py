@@ -1,5 +1,6 @@
 from flask import jsonify, request
 from flask_cors import CORS
+import uuid
 
 from config import app
 from utils import (
@@ -7,7 +8,7 @@ from utils import (
     submit_feedback, log_sms_interaction, log_pest_detection, update_weather_data, get_schemes_by_location,
     get_user_name, get_last_4_pest_images, get_pest_history, get_last_contacted_suppliers,
     get_supplier_inventory, update_inventory, get_user_info, delete_account, get_supplier_details, call_supplier, update_password,
-    forgot_password, verify_otp_and_reset_password
+    forgot_password, verify_otp_and_reset_password, upload_image
 )
 
 cors=CORS(app,origins='*')
@@ -110,6 +111,31 @@ def sms_log_route():
         return jsonify({"message": "SMS log recorded"}), 201
     else:
         return jsonify({"error": "Failed to record SMS log"}), 400
+        
+@app.route('/upload-image', methods=['POST'])
+def upload_image_endpoint():
+    # Expects 'image' as a file in multipart/form-data
+    if 'image' not in request.files:
+        return jsonify({"error": "No image file provided"}), 400
+
+    image_file = request.files['image']
+    if image_file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    data = request.get_json()
+    pest_name = data.get('pest_name')
+    if not pest_name:
+        return jsonify({"error": "Pest name is required"}), 400
+
+    user_id = request.args.get('user_id')
+    
+    result = upload_image(image_file, pest_name, user_id)
+    
+    if result["status"] == "success":
+        return jsonify(result), 200
+    else:
+        return jsonify({"error": result["message"]}), 500
+
 
 @app.route('/pest_detection/log', methods=['POST'])
 def pest_detection_log_route():

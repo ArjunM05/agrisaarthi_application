@@ -9,7 +9,7 @@ import os
 from datetime import datetime, timedelta
 import weatherapi
 from weatherapi.rest import ApiException
-from pprint import pprint
+import uuid
 
 from config import db
 
@@ -868,3 +868,49 @@ def verify_otp_and_reset_password(email: str, otp: str, new_password: str):
     except Exception as e:
         print(f"Error in verify OTP and reset password: {e}")
         return {"status": "error", "message": f"Error: {str(e)}"}
+
+def upload_image(image_file, pest_name, user_id=None):
+    """
+    Uploads an image to Supabase Storage and returns the public URL.
+    
+    Args:
+        image_file: The uploaded file object
+        pest_name (str): Name of the pest for filename
+        user_id (str, optional): User ID for logging
+    
+    Returns:
+        dict: Contains success status, filename, and public_url
+    """
+    try:
+        if not image_file.filename:
+            return {"status": "error", "message": "Invalid filename"}
+        
+        file_extension = image_file.filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"{pest_name}_{uuid.uuid4()}.{file_extension}"
+        
+        # Define the path in your Supabase bucket
+        storage_path = f"pest-images/{unique_filename}"
+        
+        # Upload the file to Supabase Storage
+        db.storage.from_("pest-images").upload(storage_path, image_file.read(), {
+            "content-type": image_file.content_type
+        })
+
+        # Get the public URL for the uploaded image
+        public_url = db.storage.from_("pest-images").get_public_url(storage_path)
+
+        if user_id:
+            print(f"User {user_id} uploaded image. Public URL: {public_url}")
+        else:
+            print(f"Image uploaded to {public_url}")
+
+        return {
+            "status": "success",
+            "message": "Image uploaded successfully",
+            "filename": unique_filename,
+            "public_url": public_url
+        }
+
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+        return {"status": "error", "message": f"Failed to upload image: {str(e)}"}
