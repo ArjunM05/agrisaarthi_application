@@ -30,11 +30,20 @@ const SupplierDashboard = () => {
   const [additionalInfo, setAdditionalInfo] = useState<SupplierDetails>({});
 
   useEffect(() => {
+    // Use backend weather data instead of external API
+    const userDistrict = "Delhi"; // Default location for supplier dashboard
     fetch(
-      "https://api.open-meteo.com/v1/forecast?latitude=28.6&longitude=77.2&current_weather=true&daily=precipitation_sum,windspeed_10m_max&timezone=auto"
+      `http://localhost:5001/weather_data/${encodeURIComponent(userDistrict)}`
     )
       .then((res) => res.json())
-      .then((data) => setWeather(data));
+      .then((data) => {
+        if (data.weather_data) {
+          setWeather(data.weather_data);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching weather:", error);
+      });
 
     // Fetch additional info from backend
     if (userId && userId !== "undefined" && userId !== "null") {
@@ -96,47 +105,47 @@ const SupplierDashboard = () => {
                       <div className="col-md-6">
                         <p>
                           <FaThermometerHalf className="me-2" /> Temperature:{" "}
-                          {weather.current_weather.temperature}°C
+                          {weather.current?.temp_c}°C
                         </p>
                         <p>
                           <FaWind className="me-2" /> Wind:{" "}
-                          {weather.current_weather.windspeed} km/h
+                          {weather.current?.wind_kph} km/h
                         </p>
                         <p>
-                          <FaTint className="me-2" /> Rain:{" "}
-                          {weather.daily.precipitation_sum[0]} mm
+                          <FaTint className="me-2" /> Humidity:{" "}
+                          {weather.current?.humidity}%
                         </p>
                       </div>
                       <div className="col-md-6">
                         <p>
                           <FaCompass className="me-2" /> Wind Direction:{" "}
-                          {weather.current_weather.temperature}°
+                          {weather.current?.wind_dir}
                         </p>
                         <p>
                           <FaSun className="me-2" /> UV Index:{" "}
-                          {weather.current_weather.windspeed}
+                          {weather.current?.uv}
                         </p>
                         <p>
-                          <FaWater className="me-2" /> Evapotranspiration:{" "}
-                          {weather.daily.precipitation_sum[0]} mm
+                          <FaWater className="me-2" /> Feels Like:{" "}
+                          {weather.current?.feelslike_c}°C
                         </p>
                       </div>
                     </div>
                     <div className="mt-4">
                       <h6>3-Day Forecast</h6>
                       <div className="row">
-                        {[0, 1, 2].map((i) => (
-                          <div className="col-md-4" key={i}>
-                            <div className="border rounded p-2 text-center shadow-sm">
-                              <strong>Day {i + 1}</strong>
-                              <p>Max: {weather.daily.precipitation_sum[0]}°C</p>
-                              <p>Min: {weather.daily.precipitation_sum[0]}°C</p>
-                              <p>
-                                Rain: {weather.daily.precipitation_sum[0]} mm
-                              </p>
+                        {weather.forecast?.forecastday
+                          ?.slice(0, 3)
+                          .map((day: any, i: number) => (
+                            <div className="col-md-4" key={i}>
+                              <div className="border rounded p-2 text-center shadow-sm">
+                                <strong>{day.date}</strong>
+                                <p>Max: {day.day.maxtemp_c}°C</p>
+                                <p>Min: {day.day.mintemp_c}°C</p>
+                                <p>Rain: {day.day.totalprecip_mm} mm</p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     </div>
                     <small className="text-muted text-end d-block mt-3">
@@ -175,15 +184,15 @@ const SupplierDashboard = () => {
                   <Card.Body>
                     <p>
                       <FaThermometerHalf className="me-2" /> Temperature:{" "}
-                      {weather.current_weather.temperature}°C
+                      {weather.current?.temp_c}°C
                     </p>
                     <p>
                       <FaWind className="me-2" /> Wind:{" "}
-                      {weather.current_weather.windspeed} km/h
+                      {weather.current?.wind_kph} km/h
                     </p>
                     <p>
-                      <FaTint className="me-2" /> Rain:{" "}
-                      {weather.daily.precipitation_sum[0]} mm
+                      <FaTint className="me-2" /> Humidity:{" "}
+                      {weather.current?.humidity}%
                     </p>
                     <small className="text-muted text-end d-block">
                       Click to expand ↓
