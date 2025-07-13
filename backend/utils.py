@@ -402,7 +402,7 @@ def update_weather_data(location: str):
         else:
             api_instance = weatherapi.APIsApi(weatherapi.ApiClient(configuration))
             try:
-                api_response = api_instance.forecast_weather(q=location, days=3)
+                api_response = api_instance.forecast_weather(q=location, days=3, aqi='yes', alerts='yes')
             except ApiException as e:
                 print("Exception when calling APIsApi->forecast_weather: %s\n" % e)
                 return None
