@@ -403,24 +403,20 @@ def update_weather_data(location: str):
             api_instance = weatherapi.APIsApi(weatherapi.ApiClient(configuration))
             try:
                 api_response = api_instance.forecast_weather(q=location, days=3, aqi='yes', alerts='yes')
+                result = db.table('weather_scheme_cache').upsert({
+                    'location': location,
+                    'weather_data': api_response,
+                    'updated_at': datetime.now().replace(tzinfo=None).isoformat()
+                }, on_conflict="location").execute()
+                if result.data:
+                    print(f"Weather data updated for {location}.")
+                    return result.data[0]
+                else:
+                    print(f"Error: Failed to update/insert weather data in database.")
+                    return None
             except ApiException as e:
                 print("Exception when calling APIsApi->forecast_weather: %s\n" % e)
                 return None
-        try:
-            result = db.table('weather_scheme_cache').upsert({
-                'location': location,
-                'weather_data': api_response,
-                'updated_at': datetime.now().replace(tzinfo=None).isoformat()
-            }, on_conflict="location").execute()
-            if result.data:
-                print(f"Weather data updated for {location}.")
-                return result.data[0]
-            else:
-                print(f"Error: Failed to update/insert weather data in database.")
-                return None     
-        except Exception as e:
-            print(f"Error updating/inserting weather data cache: {e}")
-            return None
     except Exception as e:
         print(f"Error getting weather data cache: {e}")
         return None
