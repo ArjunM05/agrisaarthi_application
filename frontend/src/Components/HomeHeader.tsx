@@ -37,34 +37,36 @@ const HomeHeader = () => {
           </Navbar.Brand>
 
           <Navbar.Toggle aria-controls="navbar-nav" />
-          <Navbar.Collapse id="navbar-nav" className="justify-content-between">
-            <Nav className="nav nav-tabs nav-fill w-75 justify-content-evenly">
-              <Nav.Link as={NavLink} to={`/${userRole}/pest-identification`}>
-                Pest Identification
-              </Nav.Link>
-              <Nav.Link as={NavLink} to={`/${userRole}/pesticide`}>
-                Pesticide
-              </Nav.Link>
-              <Nav.Link as={NavLink} to="/contact">
-                Contact Us
-              </Nav.Link>
-            </Nav>
+          <Navbar.Collapse id="navbar-nav" className="w-100">
+            <div className="d-flex justify-content-between align-items-center w-100">
+              <Nav className="flex-grow-1 d-flex justify-content-evenly">
+                <Nav.Link as={NavLink} to={`/${userRole}/pest-identification`}>
+                  Pest Identification
+                </Nav.Link>
+                <Nav.Link as={NavLink} to={`/${userRole}/pesticide`}>
+                  Pesticide
+                </Nav.Link>
+                <Nav.Link as={NavLink} to="/contact">
+                  Contact Us
+                </Nav.Link>
+              </Nav>
 
-            <Nav className="ms-auto">
-              <NavDropdown
-                title={<PersonCircle size={24} />}
-                id="profile-dropdown"
-                align="end"
-              >
-                <NavDropdown.Item as={NavLink} to={`/${userRole}/profile`}>
-                  Profile
-                </NavDropdown.Item>
-                <NavDropdown.Divider />
-                <NavDropdown.Item onClick={handleLogout}>
-                  Logout
-                </NavDropdown.Item>
-              </NavDropdown>
-            </Nav>
+              <Nav className="ms-3">
+                <NavDropdown
+                  title={<PersonCircle size={24} />}
+                  id="profile-dropdown"
+                  align="end"
+                >
+                  <NavDropdown.Item as={NavLink} to={`/${userRole}/profile`}>
+                    Profile
+                  </NavDropdown.Item>
+                  <NavDropdown.Divider />
+                  <NavDropdown.Item onClick={handleLogout}>
+                    Logout
+                  </NavDropdown.Item>
+                </NavDropdown>
+              </Nav>
+            </div>
           </Navbar.Collapse>
         </Container>
       </Navbar>
