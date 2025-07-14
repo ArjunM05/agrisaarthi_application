@@ -36,7 +36,9 @@ const SupplierHeader = () => {
           <Navbar.Toggle aria-controls="navbar-nav" />
           <Navbar.Collapse id="navbar-nav" className="w-100">
             <div className="d-flex justify-content-between align-items-center w-100">
-              <Nav className="flex-grow-1 d-flex justify-content-evenly">
+              <Nav
+                className="nav-fill nav-tabs flex-grow-1 d-flex justify-content-evenly"
+              >
                 <Nav.Link as={NavLink} to={`/${userRole}/inventory`}>
                   Inventory
                 </Nav.Link>

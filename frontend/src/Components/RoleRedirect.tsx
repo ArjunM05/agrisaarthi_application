@@ -10,7 +10,7 @@ const RoleRedirect = () => {
 
     if (userType && userEmail) {
       // User is logged in, redirect to appropriate dashboard
-      if (userType === "farmer") {
+      if (userType === "farmer" || userType === "admin") {
         navigate("/farmer");
       } else if (userType === "supplier") {
         navigate("/supplier");

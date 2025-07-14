@@ -39,7 +39,11 @@ const FarmerDashboard = () => {
   const [schemesLoading, setSchemesLoading] = useState(true);
   const [showAlert, setShowAlert] = useState(false);
   const [additionalInfo, setAdditionalInfo] = useState<FarmerDetails>({});
+  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const navigate = useNavigate();
+  const [selectedPest, setSelectedPest] = useState<any>(null);
+  const [showPestModal, setShowPestModal] = useState(false);
+  const [selectedSuppliers, setSelectedSuppliers] = useState<any[]>([]);
 
   useEffect(() => {
     // Use backend weather data instead of external API
@@ -68,7 +72,12 @@ const FarmerDashboard = () => {
         })
         .catch((error) => {
           console.error("Error fetching suppliers:", error);
+        })
+        .finally(() => {
+          setLoadingSuppliers(false);
         });
+    } else {
+      setLoadingSuppliers(false);
     }
 
     // Fetch schemes for user's district
@@ -122,6 +131,11 @@ const FarmerDashboard = () => {
     }
   }, [user_id, user_district]);
 
+  // useEffect(() => {
+  //   const timer = setTimeout(() => setLoadingSuppliers(false), 2000);
+  //   return () => clearTimeout(timer);
+  // }, []);
+
   // Check for incomplete fields
   useEffect(() => {
     if (additionalInfo) {
@@ -131,8 +145,8 @@ const FarmerDashboard = () => {
   }, [additionalInfo]);
 
   const recentPests = [
-    { img: pest1, pest: "Flea Beetle", pesticide: "Imidacloprid" },
-    { img: pest2, pest: "Aphid", pesticide: "Malathion" },
+    { img: pest1, pest: "Flea Beetle", pesticide: "Chlorpyrifos" },
+    { img: pest2, pest: "Aphid", pesticide: "Clothianidin" },
     { img: pest3, pest: "Leaf Miner", pesticide: "Spinosad" },
     { img: pest4, pest: "Whitefly", pesticide: "Thiamethoxam" },
   ];
@@ -204,6 +218,16 @@ const FarmerDashboard = () => {
   };
   const handleViewHistory = () => {
     navigate("/farmer/supplier-history");
+  };
+
+  const handlePestImageClick = (pestItem: any) => {
+    setSelectedPest(pestItem);
+    // Find all suppliers matching pesticide name
+    const matchingSuppliers = suppliers.filter(
+      (s) => s.pesticide === pestItem.pesticide
+    );
+    setSelectedSuppliers(matchingSuppliers);
+    setShowPestModal(true);
   };
 
   return (
@@ -289,7 +313,11 @@ const FarmerDashboard = () => {
                     </small>
                   </Card.Body>
                 ) : (
-                  <Card.Body>Loading weather...</Card.Body>
+                  <Card.Body>
+                    <div className="text-center text-muted">
+                      Loading weather...
+                    </div>
+                  </Card.Body>
                 )}
               </Card>
             </div>
@@ -298,7 +326,9 @@ const FarmerDashboard = () => {
                 <Card.Title>Government Schemes</Card.Title>
                 <Card.Body>
                   {schemesLoading ? (
-                    <p>Loading schemes...</p>
+                    <div className="text-center text-muted">
+                      Loading schemes...
+                    </div>
                   ) : schemes.length > 0 ? (
                     <ul>
                       {schemes.map((scheme, index) => (
@@ -383,30 +413,32 @@ const FarmerDashboard = () => {
               </a>
             </Card.Title>
             <Card.Body>
-              <div className="row">
-                {recentPests.map((item, i) => (
-                  <div key={i} className="col-6 mb-3">
-                    <div className="pest-hover-container">
-                      <img
-                        src={item.img}
-                        alt={item.pest}
-                        className="pest-hover-image"
-                        style={{
-                          maxWidth: "270px",
-                          maxHeight: "100px",
-                          objectFit: "cover",
-                        }}
-                      />
-                      <div className="pest-hover-overlay">
-                        <div>
-                          <strong>Pest: {item.pest}</strong>
-                          <br />
-                          Pesticide: {item.pesticide}
+              <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                <div className="row">
+                  {recentPests.map((item, i) => (
+                    <div key={i} className="col-6 mb-3">
+                      <div className="pest-hover-container" onClick={() => handlePestImageClick(item)}>
+                        <img
+                          src={item.img}
+                          alt={item.pest}
+                          className="pest-hover-image"
+                          style={{
+                            maxWidth: "270px",
+                            maxHeight: "100px",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <div className="pest-hover-overlay">
+                          <div>
+                            <strong>Pest: {item.pest}</strong>
+                            <br />
+                            Pesticide: {item.pesticide}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </Card.Body>
           </Card>
@@ -428,7 +460,9 @@ const FarmerDashboard = () => {
               </a>
             </Card.Title>
             <Card.Body>
-              {suppliers.length > 0 ? (
+              {loadingSuppliers ? (
+                <div className="text-center text-muted">Loading history...</div>
+              ) : suppliers.length > 0 ? (
                 <div
                   className="border rounded p-3 shadow-sm mb-2"
                   style={{ cursor: "pointer" }}
@@ -445,7 +479,7 @@ const FarmerDashboard = () => {
                       suppliers[0].contact_time.slice(0, 4)}
                   </p>
                   <button
-                    className="btn btn-success btn-sm mt-3"
+                    className="btn btn-outline-success fw-medium btn-sm mt-3"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCallSupplier(
@@ -454,7 +488,7 @@ const FarmerDashboard = () => {
                       );
                     }}
                   >
-                    <FaPhone className="me-1" /> Call Supplier
+                    📞 Call Supplier
                   </button>
                   <small className="text-muted text-end d-block">
                     Click for detailed view
@@ -507,11 +541,11 @@ const FarmerDashboard = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
+          <Button variant="btn btn-secondary" onClick={() => setShowModal(false)}>
             Close
           </Button>
           <Button
-            variant="success"
+            variant="btn btn-success"
             onClick={() => {
               if (selectedSupplier) {
                 handleCallSupplier(
@@ -522,9 +556,53 @@ const FarmerDashboard = () => {
               setShowModal(false);
             }}
           >
-            <FaPhone className="me-1" /> Call Supplier
+            📞 Call Supplier
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Pest Details Modal */}
+      <Modal show={showPestModal} onHide={() => setShowPestModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Pest Identification Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedPest && (
+            <>
+              <h4 className = "mb-3">Pest: {selectedPest.pest}</h4>
+              
+              <h5 className = "mb-4">Pesticide: {selectedPest.pesticide}</h5> 
+              <p className="mb-3"><b>Supplier Contacted for this Pesticide:</b></p>
+              {selectedSuppliers.length > 0 ? (
+                selectedSuppliers.map((supplier, idx) => (
+                  <div className="card p-3 mb-3" key={idx}>
+                    <h6>Supplier Details</h6>
+                    <p>
+                      <strong>Shop Name:</strong> {supplier.shop_name}
+                      <br />
+                      <strong>Supplier Name:</strong> {supplier.supplier_name}
+                      <br />
+                      <strong>Contacted On:</strong> {supplier.contact_time?.slice(0, 10)}
+                    </p>
+                    <button
+                      className="btn btn-outline-success fw-medium"
+                      onClick={() =>
+                        handleCallSupplier(
+                          supplier.supplier_id,
+                          supplier.pesticide
+                        )
+                      }
+                    >
+                      📞 Call Supplier
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p>No supplier contact found for this pesticide.</p>
+              )}
+            </>
+          )}
+        </Modal.Body>
       </Modal>
 
       {/* ChatBot Component */}

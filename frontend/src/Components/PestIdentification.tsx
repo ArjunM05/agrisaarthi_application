@@ -28,6 +28,7 @@ const PestIdentification: React.FC = () => {
   const [pesticideNames, setPesticideNames] = useState<{
     [pestName: string]: string[];
   }>({});
+  const [imageError, setImageError] = useState<string>("");
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -137,6 +138,7 @@ const PestIdentification: React.FC = () => {
     setLoading(true);
     setDetections([]);
     setSuppliers([]);
+    setImageError("");
 
     const formData = new FormData();
     formData.append("file", image);
@@ -157,11 +159,36 @@ const PestIdentification: React.FC = () => {
       const allPesticides: string[] = [];
       const pesticideNamesMap: { [pestName: string]: string[] } = {};
 
+      // --- INTEGRATE IMAGE UPLOAD HERE ---
+      const user_id = localStorage.getItem("user_id");
       for (const det of result) {
+        // Only upload if pest name and at least one pesticide found
         const pesticides = await fetchPesticidesForPest(det.class_name);
+        if (det.class_name && pesticides.length > 0) {
+          const uploadForm = new FormData();
+          uploadForm.append("image", image);
+          uploadForm.append("pest_name", det.class_name);
+
+          // Optionally, add user_id as a query param
+          let uploadUrl = "http://localhost:5001/upload-image";
+          // if (user_id) {
+          //   uploadUrl += `?user_id=${user_id}`;
+          // }
+
+          try {
+            await axios.post(uploadUrl, uploadForm, {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            });
+          } catch (uploadErr) {
+            console.error("Image upload failed for pest:", det.class_name, uploadErr);
+          }
+        }
         allPesticides.push(...pesticides);
         pesticideNamesMap[det.class_name] = pesticides;
       }
+      // --- END IMAGE UPLOAD INTEGRATION ---
 
       setPesticideNames(pesticideNamesMap);
 
@@ -174,7 +201,7 @@ const PestIdentification: React.FC = () => {
       }
     } catch (error) {
       console.error("Prediction failed:", error);
-      alert("Error while processing image.");
+      setImageError("Error while processing image.");
     } finally {
       setLoading(false);
       setLoadingSuppliers(false);
@@ -183,6 +210,12 @@ const PestIdentification: React.FC = () => {
 
   return (
     <div className="container my-4">
+      {imageError && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          {imageError}
+          <button type="button" className="btn-close" aria-label="Close" onClick={() => setImageError("")}></button>
+        </div>
+      )}
       <h3 className="mb-3">Upload Pest Image</h3>
       <div className="mb-3 col-md-4">
         <input

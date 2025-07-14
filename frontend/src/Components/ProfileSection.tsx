@@ -188,6 +188,8 @@ const ProfileSection: React.FC = () => {
       !passwordData.confirmPassword
     ) {
       showToast("Error", "Please fill in all password fields", "danger");
+      
+
       return;
     }
 
@@ -212,11 +214,7 @@ const ProfileSection: React.FC = () => {
 
       const data = await response.json();
       if (response.ok && data.status === "success") {
-        showToast(
-          "Success",
-          "Password updated successfully! You will be logged out.",
-          "success"
-        );
+        showToast("Success", "Password updated successfully! You will be logged out.", "success");
         setShowPasswordModal(false);
         setPasswordData({
           oldPassword: "",
@@ -234,19 +232,11 @@ const ProfileSection: React.FC = () => {
           navigate("/login");
         }, 2000);
       } else {
-        showToast(
-          "Error",
-          data.message || "Failed to update password",
-          "danger"
-        );
+        showToast("Error", data.message || "Failed to update password", "danger");
       }
     } catch (error) {
       console.error("Error updating password:", error);
-      showToast(
-        "Error",
-        "Failed to update password. Please try again.",
-        "danger"
-      );
+      showToast("Error", "Failed to update password. Please try again.", "danger");
     } finally {
       setPasswordLoading(false);
     }
@@ -1101,6 +1091,7 @@ const ProfileSection: React.FC = () => {
             <Button
               variant="secondary"
               onClick={() => setShowPasswordModal(false)}
+            
             >
               Cancel
             </Button>
@@ -1112,27 +1103,27 @@ const ProfileSection: React.FC = () => {
               {passwordLoading ? "Updating..." : "Update Password"}
             </Button>
           </Modal.Footer>
+
+          {/* ToastContainer INSIDE the modal */}
+          <ToastContainer
+            position="top-center"
+            className="p-3"
+            
+          >
+            <Toast
+              show={toast.show}
+              onClose={() => setToast((t) => ({ ...t, show: false }))}
+              delay={2000}
+              autohide
+              bg={toast.variant}
+            >
+              <Toast.Body className={toast.variant === "danger" ? "text-white" : ""}>
+                {toast.message}
+              </Toast.Body>
+            </Toast>
+          </ToastContainer>
         </Modal>
       </div>
-
-      {/* Toast */}
-      <ToastContainer
-        className="p-3"
-        position="top-center"
-        style={{ zIndex: 9999 }}
-      >
-        <Toast
-          onClose={() => setToast((t) => ({ ...t, show: false }))}
-          show={toast.show}
-          bg={toast.variant}
-          autohide
-          delay={3000}
-        >
-          <Toast.Body className="text-center text-white">
-            {toast.message}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
     </>
   );
 };

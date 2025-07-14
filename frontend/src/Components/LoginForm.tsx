@@ -284,37 +284,38 @@ const LoginForm = () => {
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
-          <div className="row g-3">
-            <div className="col-md-12">
-              <button
-                onClick={handleLogin}
-                disabled={isLoading}
-                className="btn btn-success btn-lg w-100 rounded-pill fw-medium mb-2"
-              >
-                {isLoading ? "Logging in..." : "LOGIN"}
-              </button>
-            </div>
 
-            {/* <div className="row justify-content-md-center"> */}
-            <div className="col-md-6">
+          <div className="col-10">
+            <button
+              onClick={handleLogin}
+              disabled={isLoading}
+              className="btn btn-success btn-md w-100 rounded-pill fw-medium mb-2"
+            >
+              {isLoading ? "Logging in..." : "LOGIN"}
+            </button>
+          </div>
+
+          {/* <div className="row justify-content-md-center"> */}
+          <div className="row">
+            <div className="col-5">
               <button
                 onClick={() => handleRegister()}
-                className="btn btn-outline-success btn-md w-100 rounded-pill fw-medium"
+                className="btn btn-outline-success btn-sm w-100 rounded-pill"
                 // style={{ height: "48px" }}
               >
                 REGISTER
               </button>
             </div>
-            <div className="col-md-6">
+            <div className="col-5">
               <button
                 onClick={handleForgotPassword}
-                className="btn btn-outline-success btn-md w-100 rounded-pill fw-medium"
+                className="btn btn-outline-success btn-sm w-100 rounded-pill"
                 // style={{ height: "48px" }}
               >
                 FORGOT PASSWORD
               </button>
             </div>
-            {/* </div> */}
+           
           </div>
         </div>
       </div>

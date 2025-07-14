@@ -10,8 +10,10 @@ const SupplierHistoryPage = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
   const [supplierDetails, setSupplierDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     if (user_id) {
       fetch(`http://localhost:5001/last_contacted_suppliers/${user_id}`)
         .then((res) => res.json())
@@ -22,7 +24,10 @@ const SupplierHistoryPage = () => {
         })
         .catch((error) => {
           console.error("Error fetching suppliers:", error);
-        });
+        })
+        .finally(() => setTimeout(() => setLoading(false), 1)); // 1.2s buffer
+    } else {
+      setLoading(false);
     }
   }, [user_id]);
 
@@ -58,8 +63,14 @@ const SupplierHistoryPage = () => {
     setShowModal(true);
   };
 
-  const handleCallSupplier = async (supplierId: number) => {
+  const handleCallSupplier = async (supplierId: number, pesticide: string) => {
     try {
+      const user_id = localStorage.getItem("user_id");
+      if (!user_id) {
+        alert("Please login to contact suppliers");
+        return;
+      }
+
       const response = await fetch("http://localhost:5001/call_supplier", {
         method: "POST",
         headers: {
@@ -67,71 +78,94 @@ const SupplierHistoryPage = () => {
         },
         body: JSON.stringify({
           supplier_id: supplierId,
+          farmer_id: user_id,
+          pesticide: pesticide,
         }),
       });
 
       const data = await response.json();
       if (data.supplier_phone) {
         window.open(`tel:${data.supplier_phone}`, "_blank");
+      } else {
+        alert("Could not get supplier phone number");
       }
     } catch (error) {
-      console.error("Error getting supplier phone:", error);
+      console.error("Error calling supplier:", error);
+      alert("Error contacting supplier");
     }
   };
 
   return (
-    <div className="d-flex flex-column min-vh-100">
+    <div
+      className="min-vh-100 d-flex flex-column"
+      style={{
+        background: "linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 100%)",
+      }}
+    >
       <HomeHeader />
-      <div className="flex-grow-1" style={{ marginTop: "100px" }}>
-        <Container>
-          <h3 className="mb-4">Supplier Contact History</h3>
-
-          {suppliers.length > 0 ? (
-            <Row>
-              {suppliers.map((supplier, index) => (
-                <Col key={index} md={6} lg={4} className="mb-4">
-                  <Card
-                    className="h-100 shadow-sm"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleSupplierClick(supplier)}
-                  >
-                    <Card.Body>
-                      <Card.Title>{supplier.supplier_name}</Card.Title>
-                      <Card.Text>
-                        <strong>Pesticide:</strong> {supplier.pesticide}
-                        <br />
-                        <strong>Contact Time:</strong>{" "}
-                        {supplier.contact_time.slice(0, 10)}
-                      </Card.Text>
-                      <Button
-                        variant="success"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCallSupplier(supplier.supplier_id);
-                        }}
-                      >
-                        <FaPhone className="me-1" /> Call Supplier
-                      </Button>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          ) : (
-            <Card className="text-center p-5">
-              <Card.Body>
-                <h5 className="text-muted">No supplier contacts found</h5>
-                <p className="text-muted">
-                  You haven't contacted any suppliers yet.
-                </p>
-              </Card.Body>
-            </Card>
-          )}
-        </Container>
-      </div>
-
-      {/* Supplier Details Modal */}
+      {loading ? (
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "60vh",
+          }}
+        >
+          <div className="spinner-border text-success" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-grow-1">
+          <Container className="mt-4">
+            <h3 className="mb-4">Supplier Contact History</h3>
+            {suppliers.length > 0 ? (
+              <Row>
+                {suppliers.map((supplier, index) => (
+                  <Col key={index} md={6} lg={4} className="mb-4">
+                    <Card
+                      className="h-100 shadow-sm"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handleSupplierClick(supplier)}
+                    >
+                      <Card.Body>
+                        <Card.Title>{supplier.supplier_name}</Card.Title>
+                        <Card.Text>
+                          <strong>Pesticide:</strong> {supplier.pesticide}
+                          <br />
+                          <strong>Contact Time:</strong>{" "}
+                          {supplier.contact_time.slice(0, 10)}
+                        </Card.Text>
+                        <Button
+                          variant="success"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCallSupplier(supplier.supplier_id, supplier.pesticide);
+                          }}
+                        >
+                          <FaPhone className="me-1" /> Call Supplier
+                        </Button>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            ) : (
+              <Card className="text-center p-5">
+                <Card.Body>
+                  <h5 className="text-muted">No supplier contacts found</h5>
+                  <p className="text-muted">
+                    You haven't contacted any suppliers yet.
+                  </p>
+                </Card.Body>
+              </Card>
+            )}
+          </Container>
+        </div>
+      )}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Supplier Details</Modal.Title>
@@ -176,7 +210,7 @@ const SupplierHistoryPage = () => {
             variant="success"
             onClick={() => {
               if (selectedSupplier) {
-                handleCallSupplier(selectedSupplier.supplier_id);
+                handleCallSupplier(selectedSupplier.supplier_id, selectedSupplier.pesticide);
               }
               setShowModal(false);
             }}

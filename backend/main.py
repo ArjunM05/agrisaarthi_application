@@ -11,7 +11,9 @@ from utils import (
     forgot_password, verify_otp_and_reset_password, upload_image
 )
 
-cors=CORS(app,origins='*')
+
+
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 #---------------------------------Route functions--------------------------------------------------------------------------
 
@@ -122,8 +124,7 @@ def upload_image_endpoint():
     if image_file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
-    data = request.get_json()
-    pest_name = data.get('pest_name')
+    pest_name = request.form.get('pest_name')
     if not pest_name:
         return jsonify({"error": "Pest name is required"}), 400
 

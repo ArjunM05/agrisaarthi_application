@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 // import SupplierRegistrationPage from "./pages/SupplierRegistrationPage";
 import NotFound from "./pages/NotFound";
 import "./App.css";
+import ContactUsPage from "./pages/ContactUsPage";
 // import LandingPage from "./pages/LandingPage";
 import FarmerLayout from "./layouts/FarmerLayout";
 import SupplierLayout from "./layouts/SupplierLayout";
@@ -28,6 +29,7 @@ const App = () => {
         <Route path="/" element={<RoleRedirect />} />
         <Route path="/registration" element={<RegistrationPage />} />
         <Route path={`/${userType}/profile`} element={<ProfilePage />} />
+        <Route path="/contact" element={<ContactUsPage />} />
         {/* <Route
           path="/supplier-registration"
           element={<SupplierRegistrationPage />}
