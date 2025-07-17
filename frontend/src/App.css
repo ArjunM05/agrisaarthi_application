@@ -26,6 +26,7 @@
   position: relative;
   overflow: hidden;
   border-radius: 0.375rem; /* same as Bootstrap rounded */
+  cursor: pointer; /* Add pointer cursor on hover */
 }
 
 .pest-hover-image {
@@ -34,14 +35,15 @@
   object-fit: cover;
   border-radius: 0.375rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer; /* Add pointer cursor on hover */
 }
 
 .pest-hover-overlay {
   position: absolute;
   top: 0;
   left: 0;
-  width: 270px;
-  height: 100px;
+  width: 100%; /* Make overlay cover the image responsively */
+  height: 100%; /* Make overlay cover the image responsively */
   background-color: rgba(0, 0, 0, 0.6); /* dark translucent overlay */
   color: white;
   display: flex;
@@ -53,8 +55,10 @@
   text-align: center;
   padding: 0.5rem;
   border-radius: 0.375rem;
+  pointer-events: none; /* Prevent overlay from blocking image clicks */
 }
 
 .pest-hover-container:hover .pest-hover-overlay {
   opacity: 1;
+  pointer-events: auto;
 }

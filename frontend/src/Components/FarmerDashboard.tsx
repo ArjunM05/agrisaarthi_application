@@ -44,8 +44,10 @@ const FarmerDashboard = () => {
   const [selectedPest, setSelectedPest] = useState<any>(null);
   const [showPestModal, setShowPestModal] = useState(false);
   const [selectedSuppliers, setSelectedSuppliers] = useState<any[]>([]);
+  const [recentPestImages, setRecentPestImages] = useState<string[]>([]);
 
   useEffect(() => {
+    
     // Use backend weather data instead of external API
     const userDistrict = user_district || "Delhi"; // Default to Delhi if no district
     fetch(
@@ -129,6 +131,24 @@ const FarmerDashboard = () => {
           console.error("Error fetching user info:", error);
         });
     }
+
+    // Fetch latest pest images for this user
+    if (user_id && user_id !== "undefined" && user_id !== "null") {
+      fetch("http://localhost:5001/last_pest_images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.images) {
+            setRecentPestImages(data.images);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching recent pest images:", error);
+        });
+    }
   }, [user_id, user_district]);
 
   // useEffect(() => {
@@ -138,18 +158,15 @@ const FarmerDashboard = () => {
 
   // Check for incomplete fields
   useEffect(() => {
-    if (additionalInfo) {
-      const hasEmpty = Object.values(additionalInfo).some((v) => !v);
-      setShowAlert(hasEmpty);
-    }
+    const hasEmpty = Object.values(additionalInfo).some(
+      (v) =>
+        v === null ||
+        v === undefined ||
+        // (typeof v === "boolean" && v === false) ||
+        (typeof v === "string" && v.trim() === "")
+    );
+    setShowAlert(hasEmpty);
   }, [additionalInfo]);
-
-  const recentPests = [
-    { img: pest1, pest: "Flea Beetle", pesticide: "Chlorpyrifos" },
-    { img: pest2, pest: "Aphid", pesticide: "Clothianidin" },
-    { img: pest3, pest: "Leaf Miner", pesticide: "Spinosad" },
-    { img: pest4, pest: "Whitefly", pesticide: "Thiamethoxam" },
-  ];
 
   const toggleExpanded = () => setExpanded(!expanded);
 
@@ -415,12 +432,12 @@ const FarmerDashboard = () => {
             <Card.Body>
               <div style={{ maxHeight: "300px", overflowY: "auto" }}>
                 <div className="row">
-                  {recentPests.map((item, i) => (
-                    <div key={i} className="col-6 mb-3">
-                      <div className="pest-hover-container" onClick={() => handlePestImageClick(item)}>
+                  {recentPestImages.length > 0 ? (
+                    recentPestImages.map((img, i) => (
+                      <div key={i} className="col-6 mb-3">
                         <img
-                          src={item.img}
-                          alt={item.pest}
+                          src={img}
+                          alt={`Pest ${i + 1}`}
                           className="pest-hover-image"
                           style={{
                             maxWidth: "270px",
@@ -428,16 +445,11 @@ const FarmerDashboard = () => {
                             objectFit: "cover",
                           }}
                         />
-                        <div className="pest-hover-overlay">
-                          <div>
-                            <strong>Pest: {item.pest}</strong>
-                            <br />
-                            Pesticide: {item.pesticide}
-                          </div>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-muted">No recent pest images found.</div>
+                  )}
                 </div>
               </div>
             </Card.Body>

@@ -19,6 +19,7 @@ import RoleRedirect from "./Components/RoleRedirect";
 import RegistrationPage from "./pages/RegistrationPage";
 import ProfilePage from "./pages/ProfileSectionPage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
+import RequireAuth from "./Components/RequireAuth";
 
 const App = () => {
   const userType = localStorage.getItem("user_type");
@@ -26,32 +27,17 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<RoleRedirect />} />
         <Route path="/registration" element={<RegistrationPage />} />
-        <Route path={`/${userType}/profile`} element={<ProfilePage />} />
         <Route path="/contact" element={<ContactUsPage />} />
-        {/* <Route
-          path="/supplier-registration"
-          element={<SupplierRegistrationPage />}
-        /> */}
-        <Route path="/farmer" element={<FarmerLayout />}>
+        <Route path="/" element={<RequireAuth><RoleRedirect /></RequireAuth>} />
+        <Route path={`/${userType}/profile`} element={<RequireAuth><ProfilePage /></RequireAuth>} />
+        <Route path="/farmer" element={<RequireAuth><FarmerLayout /></RequireAuth>}>
           <Route index element={<FarmerDashboardPage />} />
-          <Route
-            path="pest-identification"
-            element={<PestIdentificationPage />}
-          />
-          {/* <Route path="agribot" element={<AgriBotPage />} /> */}
+          <Route path="pest-identification" element={<PestIdentificationPage />} />
           <Route path="pesticide" element={<PesticidesPage />} />
           <Route path="supplier-history" element={<SupplierHistoryPage />} />
         </Route>
-        {/* <Route path="/home" element={<FarmerDashboardPage />} />
-        <Route
-          path="/pest-identification"
-          element={<PestIdentificationPage />}
-        />
-        <Route path="/agribot" element={<AgriBotPage />} />
-        <Route path="/pesticide" element={<PesticidesPage />} /> */}
-        <Route path="/supplier" element={<SupplierLayout />}>
+        <Route path="/supplier" element={<RequireAuth><SupplierLayout /></RequireAuth>}>
           <Route index element={<SupplierDashboardPage />} />
           <Route path="inventory" element={<InventoryPage />} />
         </Route>

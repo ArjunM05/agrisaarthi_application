@@ -10,11 +10,13 @@ from utils import (
     get_supplier_inventory, update_inventory, get_user_info, delete_account, get_supplier_details, call_supplier, update_password,
     forgot_password, verify_otp_and_reset_password, upload_image
 )
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+import os
 
 
-
-CORS(app, resources={r"/*": {"origins": "*"}})
-
+# CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}}, allow_headers="*", supports_credentials=True)
 #---------------------------------Route functions--------------------------------------------------------------------------
 
 
@@ -49,7 +51,10 @@ def update_profile_route(user_id):
     name = data.get('name')
     location = data.get('location')
 
-    if update_user_profile(user_id, name, location):
+    result = update_user_profile(user_id, name, location)
+    if result == "no_change":
+        return jsonify({"message": "No changes made"}), 200
+    elif result:
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
@@ -58,12 +63,15 @@ def update_profile_route(user_id):
 @app.route('/supplier_details/<supplier_id>', methods=['PUT'])
 def update_supplier_details_route(supplier_id):
     data = request.get_json()
-    shop_name = data.get('shopName')
+    shop_name = data.get('shop_name')
     address = data.get('address')
     latitude = data.get('latitude')
     longitude = data.get('longitude')
 
-    if update_supplier_details(supplier_id, shop_name, address, latitude, longitude):
+    result = update_supplier_details(supplier_id, shop_name, address, latitude, longitude)
+    if result == "no_change":
+        return jsonify({"message": "No changes made"}), 200
+    elif result:
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
@@ -71,9 +79,15 @@ def update_supplier_details_route(supplier_id):
 @app.route('/farmer_details/<farmer_id>', methods=['PUT'])
 def update_farmer_details_route(farmer_id):
     data = request.get_json()
-    farm_size=data.get('farmSize')
+    farm_size=data.get('farm_size')
+    main_crop=data.get('main_crop')
+    irrigation_type=data.get('irrigation_type')
+    soil_type=data.get('soil_type')
 
-    if update_farmer_details(farmer_id, farm_size):
+    result = update_farmer_details(farmer_id, farm_size, main_crop, irrigation_type, soil_type)
+    if result == "no_change":
+        return jsonify({"message": "No changes made"}), 200
+    elif result:
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "Profile update failed"}), 400
@@ -116,22 +130,28 @@ def sms_log_route():
         
 @app.route('/upload-image', methods=['POST'])
 def upload_image_endpoint():
-    # Expects 'image' as a file in multipart/form-data
+    print("FILES:", request.files)
+    print("FORM:", request.form)
+    
     if 'image' not in request.files:
+        print("1")
         return jsonify({"error": "No image file provided"}), 400
 
     image_file = request.files['image']
     if image_file.filename == '':
+        print("2")
         return jsonify({"error": "No selected file"}), 400
 
-    pest_name = request.form.get('pest_name')
+    pest_name = request.form.get('pest_name')  # ← form data
+    user_id = request.form.get("user_id") 
+    print('pest_name:', pest_name)
+
     if not pest_name:
+        print("3")
         return jsonify({"error": "Pest name is required"}), 400
 
-    user_id = request.args.get('user_id')
-    
     result = upload_image(image_file, pest_name, user_id)
-    
+
     if result["status"] == "success":
         return jsonify(result), 200
     else:
@@ -145,10 +165,9 @@ def pest_detection_log_route():
     image_url = data.get('image_url')
     pest_name = data.get('pest_name')
     confidence = data.get('confidence')
-    xai_path = data.get('xai_path')
-    dosage = data.get('dosage')
+    
 
-    if log_pest_detection(user_id, image_url, pest_name, confidence, dosage, xai_path):
+    if log_pest_detection(user_id, image_url, pest_name, confidence):
         return jsonify({"message": "Pest detection logged"}), 201
     else:
         return jsonify({"error": "Failed to log pest detection"}), 400
@@ -292,6 +311,35 @@ def reset_password_route():
     result = verify_otp_and_reset_password(email, otp, new_password)
     status_code = 200 if result["status"] == "success" else 400
     return jsonify(result), status_code
+
+# Contact Us endpoint
+@app.route('/contact', methods=['POST'])
+def contact_route():
+    data = request.get_json()
+    title = data.get('title')
+    message = data.get('message')
+    user_name = data.get('user_name')
+    user_email = data.get('user_email')
+    if not title or not message or not user_name or not user_email:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    # Compose email
+    email_body = f"Message from {user_name} ({user_email}):\n\n{message}"
+    try:
+        sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
+        mail = Mail(
+            from_email=os.getenv('SENDGRID_SENDER_EMAIL'),
+            to_emails='abhinavchaitanya6@gmail.com',
+            subject=title,
+            plain_text_content=email_body
+        )
+        response = sg.send(mail)
+        if response.status_code in [200, 202]:
+            return jsonify({'message': 'Message sent successfully'}), 200
+        else:
+            return jsonify({'error': 'Failed to send message'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Error sending email: {str(e)}'}), 500
 
 #-------------------------------------------------------------------------------------------------
 

@@ -8,6 +8,10 @@ const HomeHeader = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("user_name");
+    localStorage.removeItem("user_district");
+    localStorage.removeItem("user_phone");
     localStorage.removeItem("user_type");
     localStorage.removeItem("user_email");
     navigate("/login");

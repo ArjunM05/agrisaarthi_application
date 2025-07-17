@@ -77,8 +77,7 @@ def register_user(name: str, email: str, phone: str, password: str, user_type: s
                 'address': '',
                 'latitude': 0,
                 'longitude': 0,
-                'approved': False,
-                'service_areas': []
+                'approved': False
             }).execute()
         
         if result.data and (result_details is None or result_details.data):
@@ -142,7 +141,7 @@ def update_user_profile(user_id, name=None, phone=None, district=None):
 
     if not update_fields:
         print(f"No fields to update for user ID {user_id}.")
-        return False
+        return "no_change"
 
     try:
         result = db.table('users').update(update_fields).eq('id', user_id).execute()
@@ -156,7 +155,7 @@ def update_user_profile(user_id, name=None, phone=None, district=None):
         print(f"An unexpected error occurred during profile update: {e}")
         return False
 
-def update_supplier_details(supplier_id, shop_name=None, address=None, latitude=None, longitude=None, approved=None, service_areas=None):
+def update_supplier_details(supplier_id, shop_name=None, address=None, latitude=None, longitude=None, approved=None):
     """
     Updates the supplier information.
 
@@ -167,7 +166,6 @@ def update_supplier_details(supplier_id, shop_name=None, address=None, latitude=
         latitude (float, optional): The latitude of the location of the shop.
         longitude (float, optional): The longitude of the location of the shop.
         approved (bool, optional): Whether the supplier is approved.
-        service_areas (list, optional): List of service areas.
     """
     supplier_result = db.table('users').select('id').eq('id', supplier_id).limit(1).execute()
     if not supplier_result.data:
@@ -185,12 +183,10 @@ def update_supplier_details(supplier_id, shop_name=None, address=None, latitude=
         update_fields['longitude'] = float(longitude)
     if approved is not None:
         update_fields['approved'] = approved
-    if service_areas is not None:
-        update_fields['service_areas'] = service_areas
 
     if not update_fields:
         print(f"No fields to update for supplier ID {supplier_id}.")
-        return False
+        return "no_change"
 
     try:
         result = db.table('supplier_details').update(update_fields).eq('supplier_id', supplier_id).execute()
@@ -204,7 +200,7 @@ def update_supplier_details(supplier_id, shop_name=None, address=None, latitude=
         print(f"An unexpected error occurred during supplier details update: {e}")
         return False
 
-def update_farmer_details(farmer_id, farm_size=None, main_crop=None, irrigation_type=None):
+def update_farmer_details(farmer_id, farm_size=None, main_crop=None, irrigation_type=None, soil_type=None):
     """
     Updates the farmer information.
 
@@ -226,10 +222,11 @@ def update_farmer_details(farmer_id, farm_size=None, main_crop=None, irrigation_
         update_fields['main_crop'] = main_crop
     if irrigation_type is not None:
         update_fields['irrigation_type'] = irrigation_type
-
+    if soil_type is not None:
+        update_fields['soil_type'] = soil_type
     if not update_fields:
         print(f"No fields to update for farmer ID {farmer_id}.")
-        return False
+        return "no_change"
 
     try:
         result = db.table('farmer_details').update(update_fields).eq('farmer_id', farmer_id).execute()
@@ -339,7 +336,7 @@ def log_sms_interaction(user_phone: str, query_type: str, message: str, response
         print(f"Error logging SMS interaction: {e}")
         return False
 
-def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence: float, dosage: int, xai_path: str = ""):
+def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence: float):
     """
     Logs the results of a pest detection inference.
 
@@ -351,7 +348,7 @@ def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence:
         dosage (int): The dosage of pesticide to be administered.
         xai_path (str, optional): URL or path to the Explainable AI visualization. Defaults to None.
     """
-    if not user_id or not image_url or not pest_name or confidence is None or dosage is None:
+    if not user_id or not image_url or not pest_name or confidence is None:
         print("Error: User ID, image URL, pest name, dosage, and confidence are required.")
         return False
     if not (0.0 <= confidence <= 1.0):
@@ -364,10 +361,9 @@ def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence:
             'image_url': image_url,
             'pest_name': pest_name,
             'confidence': confidence,
-            'dosage': dosage
+          
         }
-        if xai_path is not None:
-            data['xai_path'] = xai_path
+       
         result = db.table('pest_inference_results').insert(data).execute()
         if result.data:
             print(f"Pest detection logged for User ID {user_id}.")
@@ -663,7 +659,7 @@ def get_user_info(user_id):
         role = user.get('role', '').lower()
         details = None
         if role == 'farmer':
-            details_result = db.table('farmer_details').select('*').eq('farmer_id', user_id).limit(1).execute()
+            details_result = db.table('farmer_details').select('farm_size, main_crop, irrigation_type, soil_type').eq('farmer_id', user_id).limit(1).execute()
             if details_result.data:
                 details = details_result.data[0]
             else:
@@ -671,12 +667,15 @@ def get_user_info(user_id):
                 details = {
                     'farm_size': None,
                     'main_crop': None,
-                    'irrigation_type': None
+                    'irrigation_type': None,
+                    'soil_type': None,
+                    
                 }
             user['details'] = details
         elif role == 'supplier':
             details_result = db.table('supplier_details').select('*').eq('supplier_id', user_id).limit(1).execute()
             if details_result.data:
+                # print(details_result.data)
                 details = details_result.data[0]
             else:
                 # Create default supplier details if none exist
@@ -685,10 +684,10 @@ def get_user_info(user_id):
                     'address': None,
                     'latitude': None,
                     'longitude': None,
-                    'approved': False,
-                    'service_areas': []
+                    'approved': False
                 }
             user['details'] = details
+           
         elif role == 'admin':
             details_result = db.table('admin_details').select('*').eq('admin_id', user_id).limit(1).execute()
             if details_result.data:
@@ -879,22 +878,30 @@ def upload_image(image_file, pest_name, user_id=None):
     """
     try:
         if not image_file.filename:
+            print("here")
             return {"status": "error", "message": "Invalid filename"}
+            
         
         file_extension = image_file.filename.rsplit('.', 1)[1].lower()
         unique_filename = f"{pest_name}_{uuid.uuid4()}.{file_extension}"
         
         # Define the path in your Supabase bucket
         storage_path = f"pest-images/{unique_filename}"
-        
-        # Upload the file to Supabase Storage
-        db.storage.from_("pest-images").upload(storage_path, image_file.read(), {
-            "content-type": image_file.content_type
-        })
+        print("here1")
 
+        image_bytes = image_file.read()
+
+        db.storage.from_("pest-images").upload(
+            storage_path,
+            image_bytes,
+            {"content-type": image_file.content_type}
+        )
+        # Upload the file to Supabase Storage
+        
+        print("here2")
         # Get the public URL for the uploaded image
         public_url = db.storage.from_("pest-images").get_public_url(storage_path)
-
+        print("here3")
         if user_id:
             print(f"User {user_id} uploaded image. Public URL: {public_url}")
         else:
@@ -906,6 +913,7 @@ def upload_image(image_file, pest_name, user_id=None):
             "filename": unique_filename,
             "public_url": public_url
         }
+        print("here4")
 
     except Exception as e:
         print(f"Error uploading image: {e}")

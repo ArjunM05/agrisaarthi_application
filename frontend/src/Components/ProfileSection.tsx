@@ -26,6 +26,7 @@ type FarmerDetails = {
   farm_size?: number;
   main_crop?: string;
   irrigation_type?: string;
+  soil_type?: string;
 };
 
 type SupplierDetails = {
@@ -34,7 +35,6 @@ type SupplierDetails = {
   longitude?: number;
   address?: string;
   approved?: boolean;
-  service_areas?: string[];
 };
 
 type AdditionalInfo = FarmerDetails | SupplierDetails;
@@ -71,6 +71,24 @@ const ProfileSection: React.FC = () => {
     message: "",
     variant: "success",
   });
+  // Alert states for cards
+  const [basicInfoAlert, setBasicInfoAlert] = useState<{message: string, variant: "success" | "danger" | "warning" | "info"} | null>(null);
+  const [additionalInfoAlert, setAdditionalInfoAlert] = useState<{message: string, variant: "success" | "danger" | "warning" | "info"} | null>(null);
+
+  // Auto-dismiss alerts after 1.5 seconds
+  useEffect(() => {
+    if (basicInfoAlert) {
+      const timer = setTimeout(() => setBasicInfoAlert(null), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [basicInfoAlert]);
+
+  useEffect(() => {
+    if (additionalInfoAlert) {
+      const timer = setTimeout(() => setAdditionalInfoAlert(null), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [additionalInfoAlert]);
 
   const userRole = localStorage.getItem("user_type");
   const userId = localStorage.getItem("user_id");
@@ -169,7 +187,9 @@ const ProfileSection: React.FC = () => {
   // Check for incomplete fields
   useEffect(() => {
     if (additionalInfo) {
-      const hasEmpty = Object.values(additionalInfo).some((v) => !v);
+      const hasEmpty = Object.values(additionalInfo).some(
+        (v) => v === null || v === undefined  || (typeof v === "string" && v.trim() === "")
+      );
       setShowAlert(hasEmpty);
     }
   }, [additionalInfo]);
@@ -264,13 +284,11 @@ const ProfileSection: React.FC = () => {
         navigate("/login");
       } else {
         const errorData = await response.json();
-        alert(
-          `Failed to delete account: ${errorData.error || "Unknown error"}`
-        );
+        setAdditionalInfoAlert({ message: `Failed to delete account: ${errorData.error || "Unknown error"}`, variant: "danger" });
       }
     } catch (error) {
       console.error("Error deleting account:", error);
-      alert("Failed to delete account. Please try again.");
+      setAdditionalInfoAlert({ message: "Failed to delete account. Please try again.", variant: "danger" });
     } finally {
       setDeleteLoading(false);
       setShowDeleteModal(false);
@@ -312,7 +330,10 @@ const ProfileSection: React.FC = () => {
           }
         );
 
-        if (response.ok) {
+        const data = await response.json();
+        if (response.ok && data.message === "No changes made") {
+          setBasicInfoAlert({ message: "No changes were made to your details.", variant: "info" });
+        } else if (response.ok) {
           // Update localStorage
           localStorage.setItem("user_name", editUser?.name || "");
           localStorage.setItem("user_phone", editUser?.phone || "");
@@ -320,8 +341,9 @@ const ProfileSection: React.FC = () => {
 
           setUser(editUser);
           setEditMode({ ...editMode, basic: false });
+          setBasicInfoAlert({ message: "Basic info updated successfully!", variant: "success" });
         } else {
-          alert("Failed to update basic info");
+          setBasicInfoAlert({ message: "Failed to update basic info", variant: "danger" });
         }
       } else {
         // Update additional info based on user type
@@ -338,15 +360,20 @@ const ProfileSection: React.FC = () => {
                 farm_size: farmerDetails.farm_size,
                 main_crop: farmerDetails.main_crop,
                 irrigation_type: farmerDetails.irrigation_type,
+                soil_type: farmerDetails.soil_type,
               }),
             }
           );
 
-          if (response.ok) {
+          const data = await response.json();
+          if (response.ok && data.message === "No changes made") {
+            setAdditionalInfoAlert({ message: "No changes were made to your details.", variant: "info" });
+          } else if (response.ok) {
             setAdditionalInfo(editAdditional);
             setEditMode({ ...editMode, additional: false });
+            setAdditionalInfoAlert({ message: "Farmer details updated successfully!", variant: "success" });
           } else {
-            alert("Failed to update farmer details");
+            setAdditionalInfoAlert({ message: "Failed to update farmer details", variant: "danger" });
           }
         } else if (userRole === "supplier") {
           const supplierDetails = editAdditional as SupplierDetails;
@@ -363,22 +390,29 @@ const ProfileSection: React.FC = () => {
                 latitude: supplierDetails.latitude,
                 longitude: supplierDetails.longitude,
                 approved: supplierDetails.approved,
-                service_areas: supplierDetails.service_areas,
               }),
             }
           );
 
-          if (response.ok) {
+          const data = await response.json();
+          if (response.ok && data.message === "No changes made") {
+            setAdditionalInfoAlert({ message: "No changes were made to your details.", variant: "info" });
+          } else if (response.ok) {
             setAdditionalInfo(editAdditional);
             setEditMode({ ...editMode, additional: false });
+            setAdditionalInfoAlert({ message: "Supplier details updated successfully!", variant: "success" });
           } else {
-            alert("Failed to update supplier details");
+            setAdditionalInfoAlert({ message: "Failed to update supplier details", variant: "danger" });
           }
         }
       }
     } catch (error) {
       console.error("Error saving data:", error);
-      alert("Failed to save changes");
+      if (section === "basic") {
+        setBasicInfoAlert({ message: "Failed to save changes", variant: "danger" });
+      } else {
+        setAdditionalInfoAlert({ message: "Failed to save changes", variant: "danger" });
+      }
     } finally {
       setSaveLoading(false);
     }
@@ -401,12 +435,6 @@ const ProfileSection: React.FC = () => {
       parsedValue = parseFloat(value) || 0;
     } else if (name === "approved") {
       parsedValue = value === "Yes";
-    } else if (name === "service_areas") {
-      // Convert comma-separated string to array
-      parsedValue = value
-        .split(",")
-        .map((area: string) => area.trim())
-        .filter((area: string) => area.length > 0);
     }
 
     setEditAdditional({ ...editAdditional, [name]: parsedValue });
@@ -533,6 +561,11 @@ const ProfileSection: React.FC = () => {
               </Button>
             )}
           </Card.Header>
+          {basicInfoAlert && (
+            <Alert variant={basicInfoAlert.variant} onClose={() => setBasicInfoAlert(null)} dismissible className="mb-0">
+              {basicInfoAlert.message}
+            </Alert>
+          )}
           <Card.Body>
             {editMode.basic ? (
               <>
@@ -651,6 +684,11 @@ const ProfileSection: React.FC = () => {
               </Button>
             )}
           </Card.Header>
+          {additionalInfoAlert && (
+            <Alert variant={additionalInfoAlert.variant} onClose={() => setAdditionalInfoAlert(null)} dismissible className="mb-0">
+              {additionalInfoAlert.message}
+            </Alert>
+          )}
           <Card.Body>
             {editMode.additional ? (
               <>
@@ -704,6 +742,23 @@ const ProfileSection: React.FC = () => {
                         onChange={handleAdditionalChange}
                       />
                     </div>
+                    <div className="mb-2">
+                      <label className="form-label mb-0">
+                        <strong>Soil Type:</strong>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        name="soil_type"
+                        value={
+                          isFarmerDetails(editAdditional)
+                            ? editAdditional.soil_type || ""
+                            : ""
+                        }
+                        onChange={handleAdditionalChange}
+                      />
+                    </div>
+                    
                   </>
                 ) : userRole === "supplier" ? (
                   <>
@@ -778,7 +833,7 @@ const ProfileSection: React.FC = () => {
                         <strong>Approved:</strong>
                       </label>
                       <select
-                        className="form-control form-control-sm"
+                        className="form-select form-select-sm"
                         name="approved"
                         value={
                           isSupplierDetails(editAdditional)
@@ -789,28 +844,12 @@ const ProfileSection: React.FC = () => {
                         }
                         onChange={handleAdditionalChange}
                       >
+                        
                         <option value="Yes">Yes</option>
                         <option value="No">No</option>
                       </select>
                     </div>
-                    <div className="mb-2">
-                      <label className="form-label mb-0">
-                        <strong>Service Areas:</strong>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm"
-                        name="service_areas"
-                        value={
-                          isSupplierDetails(editAdditional) &&
-                          Array.isArray(editAdditional.service_areas)
-                            ? editAdditional.service_areas.join(", ")
-                            : ""
-                        }
-                        onChange={handleAdditionalChange}
-                        placeholder="Enter areas separated by commas"
-                      />
-                    </div>
+                    
                   </>
                 ) : null}
                 <div className="d-flex gap-2 mt-2">
@@ -859,6 +898,13 @@ const ProfileSection: React.FC = () => {
                         <span className="text-muted">Please enter details</span>
                       )}
                     </p>
+                    <p>
+                      <strong>Soil Type:</strong>{" "}
+                      {(isFarmerDetails(additionalInfo) &&
+                        additionalInfo.soil_type) || (
+                        <span className="text-muted">Please enter details</span>
+                      )}
+                    </p>
                   </>
                 ) : userRole === "supplier" ? (
                   <>
@@ -903,16 +949,7 @@ const ProfileSection: React.FC = () => {
                         <span className="text-muted">Please enter details</span>
                       )}
                     </p>
-                    <p>
-                      <strong>Service Areas:</strong>{" "}
-                      {isSupplierDetails(additionalInfo) &&
-                      Array.isArray(additionalInfo.service_areas) &&
-                      additionalInfo.service_areas.length > 0 ? (
-                        additionalInfo.service_areas.join(", ")
-                      ) : (
-                        <span className="text-muted">Please enter details</span>
-                      )}
-                    </p>
+                    
                   </>
                 ) : null}
               </>

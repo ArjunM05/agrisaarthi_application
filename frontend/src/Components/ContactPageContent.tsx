@@ -39,22 +39,46 @@ const ContactPageContent: React.FC = () => {
     }
   };
 
-  const handleContactSubmit = () => {
+  const handleContactSubmit = async () => {
     if (!title.trim() || !message.trim()) {
       setContactError("Please fill in both fields.");
       return;
     }
-    setContactSuccess("Message submitted.");
-    setTitle("");
-    setMessage("");
+    setContactSuccess("");
+    setContactError("");
+    // Get user info from localStorage
+    const user_name = localStorage.getItem("user_name") || "Unknown User";
+    const user_email = localStorage.getItem("user_email") || "Unknown Email";
+    try {
+      const response = await fetch("http://localhost:5001/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          message,
+          user_name,
+          user_email,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setContactSuccess("Message submitted.");
+        setTitle("");
+        setMessage("");
+      } else {
+        setContactError(data.error || "Failed to send message.");
+      }
+    } catch (error) {
+      setContactError("Failed to send message. Please try again.");
+    }
   };
 
   const team = [
-    { name: "Team Mmeber 1", email: "member1@example.com" },
-    { name: "Team Member 2", email: "member2@example.com" },
-    { name: "Team Member 3", email: "member3@example.com" },
-    { name: "Team Member 4", email: "member4@example.com" },
-    { name: "Team Member 5", email: "member5@example.com" },
+    { name: "Sushmetha S R", email: "sush7niaa@gmail.com" },
+    { name: "Abhinav Chaitanya R", email: "abhinavchaitanya6@gmail.com" },
+    { name: "Arjun M", email: "arjunm.0510@gmail.com" },
+    { name: "Kiranchandran H", email: "kiranchandranh@gmail.com" },
+    { name: "Harshavardhan S", email: "harsak7@gmail.com" },
   ];
 
   return (
@@ -76,6 +100,7 @@ const ContactPageContent: React.FC = () => {
                   onClick={() => setRating(rating === star ? 0 : star)}
                 >
                   ★
+                  
                 </span>
               ))}
             </div>
@@ -162,14 +187,14 @@ const ContactPageContent: React.FC = () => {
             <h4 className="mb-4">Meet the Team</h4>
             <div className="row mb-3">
               <div className="col-md-6 offset-md-3 text-center border p-3 rounded">
-                <h6>{team[0].name}</h6>
+                <h5>{team[0].name}</h5>
                 <p className="mb-0">{team[0].email}</p>
               </div>
             </div>
             <div className="row mb-3">
               {team.slice(1, 3).map((member, idx) => (
                 <div className="col-md-6 text-center border p-3 rounded" key={idx}>
-                  <h6>{member.name}</h6>
+                  <h5>{member.name}</h5>
                   <p className="mb-0">{member.email}</p>
                 </div>
               ))}
@@ -177,7 +202,7 @@ const ContactPageContent: React.FC = () => {
             <div className="row">
               {team.slice(3).map((member, idx) => (
                 <div className="col-md-6 text-center border p-3 rounded" key={idx}>
-                  <h6>{member.name}</h6>
+                  <h5>{member.name}</h5>
                   <p className="mb-0">{member.email}</p>
                 </div>
               ))}

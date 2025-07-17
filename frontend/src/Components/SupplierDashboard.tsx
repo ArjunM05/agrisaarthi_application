@@ -63,7 +63,9 @@ const SupplierDashboard = () => {
   // Check for incomplete fields
   useEffect(() => {
     if (additionalInfo) {
-      const hasEmpty = Object.values(additionalInfo).some((v) => !v);
+      const hasEmpty = Object.values(additionalInfo).some(
+        (v) => v === null || v === undefined  || (typeof v === "string" && v.trim() === "")
+      );
       setShowAlert(hasEmpty);
     }
   }, [additionalInfo]);

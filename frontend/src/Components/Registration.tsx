@@ -1,7 +1,86 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Toast, ToastContainer } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+
+const districts = [
+  "Ariyalur",
+  "Chengalpattu",
+  "Chennai",
+  "Coimbatore",
+  "Cuddalore",
+  "Dharmapuri",
+  "Dindigul",
+  "Erode",
+  "Kallakurichi",
+  "Kancheepuram",
+  "Kanniyakumari",
+  "Karur",
+  "Krishnagiri",
+  "Madurai",
+  "Mayiladuthurai",
+  "Nagapattinam",
+  "Namakkal",
+  "Nilgiris",
+  "Perambalur",
+  "Pudukkottai",
+  "Ramanathapuram",
+  "Ranipet",
+  "Salem",
+  "Sivaganga",
+  "Tenkasi",
+  "Thanjavur",
+  "Theni",
+  "Thoothukudi",
+  "Tiruchirappalli",
+  "Tirunelveli",
+  "Tirupathur",
+  "Tiruppur",
+  "Tiruvallur",
+  "Tiruvannamalai",
+  "Tiruvarur",
+  "Vellore",
+  "Viluppuram",
+  "Virudhunagar"
+];
+
+// Fuzzy search helper (Levenshtein distance)
+function levenshtein(a: string, b: string) {
+  const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+  for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1].toLowerCase() === b[j - 1].toLowerCase()) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = 1 + Math.min(
+          matrix[i - 1][j],
+          matrix[i][j - 1],
+          matrix[i - 1][j - 1]
+        );
+      }
+    }
+  }
+  return matrix[a.length][b.length];
+}
+
+function getFilteredDistricts(input: string) {
+  if (!input) return districts;
+  // Fuzzy match: sort by Levenshtein distance, then filter those with distance <= 3 or substring match
+  const matches = districts
+    .map((district) => ({
+      name: district,
+      dist: levenshtein(input, district),
+      substr: district.toLowerCase().includes(input.toLowerCase()),
+    }))
+    .sort((a, b) => a.dist - b.dist || (b.substr ? -1 : 1));
+  // Show substring matches and plausible fuzzy matches
+  return matches
+    .filter((d) => d.substr || d.dist <= 3)
+    .map((d) => d.name)
+    .slice(0, 8); // Limit to 8 suggestions
+}
 
 const Registration = () => {
   const [formData, setFormData] = useState({
@@ -21,6 +100,30 @@ const Registration = () => {
     variant: "success",
   });
   const navigate = useNavigate();
+  const [districtInput, setDistrictInput] = useState("");
+  const [districtDropdownOpen, setDistrictDropdownOpen] = useState(false);
+  const [districtOptions, setDistrictOptions] = useState(districts);
+  const districtInputRef = useRef<HTMLInputElement>(null);
+  const districtDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setDistrictOptions(getFilteredDistricts(districtInput));
+  }, [districtInput]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        districtDropdownRef.current &&
+        !districtDropdownRef.current.contains(event.target as Node) &&
+        districtInputRef.current &&
+        !districtInputRef.current.contains(event.target as Node)
+      ) {
+        setDistrictDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const showToast = (
     title: string,
@@ -200,7 +303,7 @@ const Registration = () => {
               />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3 position-relative">
               <label
                 htmlFor="district"
                 className="form-label text-uppercase fw-medium text-muted small"
@@ -210,11 +313,53 @@ const Registration = () => {
               <input
                 id="district"
                 type="text"
-                value={formData.district}
-                onChange={(e) => handleInputChange("district", e.target.value)}
-                className="form-control"
+                value={districtInput}
+                ref={districtInputRef}
+                onFocus={() => setDistrictDropdownOpen(true)}
+                onChange={(e) => {
+                  setDistrictInput(e.target.value);
+                  handleInputChange("district", e.target.value);
+                  setDistrictDropdownOpen(true);
+                }}
+                className="form-select"
+                autoComplete="off"
+                placeholder="Select District"
                 required
               />
+              {districtDropdownOpen && districtOptions.length > 0 && (
+                <div
+                  ref={districtDropdownRef}
+                  style={{
+                    position: "absolute",
+                    zIndex: 1000,
+                    background: "#fff",
+                    border: "1px solid #ccc",
+                    borderRadius: 4,
+                    maxHeight: 180,
+                    overflowY: "auto",
+                    width: "100%",
+                  }}
+                >
+                  {districtOptions.map((option, idx) => (
+                    <div
+                      key={option}
+                      style={{
+                        padding: "8px 12px",
+                        cursor: "pointer",
+                        background:
+                          formData.district === option ? "#e9ecef" : "#fff",
+                      }}
+                      onMouseDown={() => {
+                        setDistrictInput(option);
+                        handleInputChange("district", option);
+                        setDistrictDropdownOpen(false);
+                      }}
+                    >
+                      {option}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="mb-3">
@@ -231,7 +376,9 @@ const Registration = () => {
                 className="form-select"
                 required
               >
-                <option selected>Select Role</option>
+                <option value="" disabled selected hidden>
+                  Select Role
+                </option>
                 <option value="farmer">Farmer</option>
                 <option value="supplier">Supplier</option>
               </select>

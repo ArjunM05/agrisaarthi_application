@@ -133,80 +133,94 @@ const PestIdentification: React.FC = () => {
     }
   };
 
-  const handleUpload = async () => {
-    if (!image) return alert("Please select an image.");
-    setLoading(true);
-    setDetections([]);
-    setSuppliers([]);
-    setImageError("");
 
-    const formData = new FormData();
-    formData.append("file", image);
+    const handleUpload = async () => {
+      if (!image) return alert("Please select an image.");
+      setLoading(true);
+      setDetections([]);
+      setSuppliers([]);
+      setImageError("");
+  
+      try {
+        // Predict pests from image
+        const formData = new FormData();
+        formData.append("file", image);
+        const response = await axios.post("/predict", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Accept: "application/json",
+          },
+        });
 
-    try {
-      const response = await axios.post("/predict", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Accept: "application/json",
-        },
-      });
-
-      const result = response.data.detections;
-      setDetections(result);
-
-      // Fetch pesticides and suppliers for each detected pest
-      setLoadingSuppliers(true);
-      const allPesticides: string[] = [];
-      const pesticideNamesMap: { [pestName: string]: string[] } = {};
-
-      // --- INTEGRATE IMAGE UPLOAD HERE ---
-      const user_id = localStorage.getItem("user_id");
-      for (const det of result) {
-        // Only upload if pest name and at least one pesticide found
-        const pesticides = await fetchPesticidesForPest(det.class_name);
-        if (det.class_name && pesticides.length > 0) {
-          const uploadForm = new FormData();
-          uploadForm.append("image", image);
-          uploadForm.append("pest_name", det.class_name);
-
-          // Optionally, add user_id as a query param
-          let uploadUrl = "http://localhost:5001/upload-image";
-          // if (user_id) {
-          //   uploadUrl += `?user_id=${user_id}`;
-          // }
-
-          try {
-            await axios.post(uploadUrl, uploadForm, {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            });
-          } catch (uploadErr) {
-            console.error("Image upload failed for pest:", det.class_name, uploadErr);
-          }
+        const result = response.data.detections;
+        if (!result || result.length === 0) {
+          setDetections([]);
+          setImageError("No pests detected.");
+          setLoading(false);
+          setLoadingSuppliers(false);
+          return;
         }
-        allPesticides.push(...pesticides);
-        pesticideNamesMap[det.class_name] = pesticides;
-      }
-      // --- END IMAGE UPLOAD INTEGRATION ---
 
-      setPesticideNames(pesticideNamesMap);
-
-      if (allPesticides.length > 0) {
-        const uniquePesticides = [...new Set(allPesticides)];
-        const suppliersData = await fetchSuppliersForPesticides(
-          uniquePesticides
+        // Find the pest with the highest confidence
+        const topDetection = result.reduce((max: any, det: any) =>
+          det.confidence > max.confidence ? det : max
         );
+        setDetections([topDetection]);
+
+        // Upload image ONCE to Supabase
+        const fileExt = image.name.split('.').pop();
+        const fileName = `pest_${topDetection.class_name}_${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("pest-images")
+          .upload(filePath, image);
+        if (uploadError) {
+          console.error("Supabase upload error:", uploadError);
+          setImageError("Image upload failed.");
+          setLoading(false);
+          setLoadingSuppliers(false);
+          return;
+        }
+        const { data: publicUrlData } = supabase.storage
+          .from("pest-images")
+          .getPublicUrl(filePath);
+        const imageUrl = publicUrlData.publicUrl;
+
+        // Fetch pesticides for the top pest
+        setLoadingSuppliers(true);
+        const pesticides = await fetchPesticidesForPest(topDetection.class_name);
+        const pesticideNamesMap: { [pestName: string]: string[] } = {
+          [topDetection.class_name]: pesticides,
+        };
+        setPesticideNames(pesticideNamesMap);
+
+        // Log detection and pesticides directly to Supabase (frontend only)
+        const user_id = localStorage.getItem("user_id") || "";
+        const pesticideString = pesticides.join(", ");
+        await supabase.from("pest_inference_results").insert([
+          {
+            user_id: user_id,
+            pest_name: topDetection.class_name,
+            image_url: imageUrl,
+            pesticide: pesticideString,
+            confidence: topDetection.confidence,
+          },
+        ]);
+
+        // Fetch suppliers for the recommended pesticides
+        let suppliersData: Supplier[] = [];
+        if (pesticides.length > 0) {
+          suppliersData = await fetchSuppliersForPesticides(pesticides);
+        }
         setSuppliers(suppliersData);
+      } catch (error) {
+        console.error("Prediction failed:", error);
+        setImageError("Error while processing image.");
+      } finally {
+        setLoading(false);
+        setLoadingSuppliers(false);
       }
-    } catch (error) {
-      console.error("Prediction failed:", error);
-      setImageError("Error while processing image.");
-    } finally {
-      setLoading(false);
-      setLoadingSuppliers(false);
-    }
-  };
+    };
 
   return (
     <div className="container my-4">

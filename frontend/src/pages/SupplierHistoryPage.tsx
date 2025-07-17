@@ -139,14 +139,14 @@ const SupplierHistoryPage = () => {
                           {supplier.contact_time.slice(0, 10)}
                         </Card.Text>
                         <Button
-                          variant="success"
-                          size="sm"
+                          variant="outline-success"
+                          className = "fw-medium btn-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCallSupplier(supplier.supplier_id, supplier.pesticide);
                           }}
                         >
-                          <FaPhone className="me-1" /> Call Supplier
+                          📞 Call Supplier
                         </Button>
                       </Card.Body>
                     </Card>
@@ -203,11 +203,12 @@ const SupplierHistoryPage = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
+          <Button variant="secondary" className="fw-medium btn-md" onClick={() => setShowModal(false)}>
             Close
           </Button>
           <Button
             variant="success"
+            className="fw-medium btn-md"
             onClick={() => {
               if (selectedSupplier) {
                 handleCallSupplier(selectedSupplier.supplier_id, selectedSupplier.pesticide);
@@ -215,7 +216,7 @@ const SupplierHistoryPage = () => {
               setShowModal(false);
             }}
           >
-            <FaPhone className="me-1" /> Call Supplier
+            📞 Call Supplier
           </Button>
         </Modal.Footer>
       </Modal>

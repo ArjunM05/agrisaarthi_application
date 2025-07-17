@@ -31,6 +31,13 @@ const LoginForm = () => {
 
   const navigate = useNavigate();
 
+  // Handle Enter key for login
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
+  };
+
   const showToast = (
     title: string,
     description: string,
@@ -256,6 +263,7 @@ const LoginForm = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               className="form-control form-control-lg"
+              onKeyDown={handleKeyDown}
               // autoComplete="username"
             />
           </div>
@@ -274,6 +282,7 @@ const LoginForm = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               className="form-control form-control-lg"
+              onKeyDown={handleKeyDown}
               // autoComplete="current-password"
             />
             <span
