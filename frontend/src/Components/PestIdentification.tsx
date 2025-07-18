@@ -294,7 +294,7 @@ const PestIdentification: React.FC = () => {
               <h6>Suppliers with Recommended Pesticides:</h6>
               <div className="row">
                 {suppliers.map((supplier, idx) => (
-                  <div className="col-md-6 col-lg-4" key={idx}>
+                  <div className="col-md-6 col-lg-4 mb-3" key={idx}>
                     <div className="card shadow-sm mb-3 h-100">
                       <div className="card-body d-flex flex-column">
                         <h5 className="card-title">{supplier.shop_name}</h5>
@@ -309,7 +309,7 @@ const PestIdentification: React.FC = () => {
                         <div className="mt-auto d-flex justify-content-between align-items-center">
                           <div>
                             <strong className="text-success">
-                              ₹{supplier.price}
+                              ₹{supplier.price}/litre
                             </strong>
                             <br />
                             <small className="text-muted">

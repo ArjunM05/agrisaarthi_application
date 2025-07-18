@@ -323,7 +323,7 @@ const SupplierInventory = () => {
                     <Card.Title>{item.pesticide}</Card.Title>
                     <Card.Body>
                       <p>
-                        <strong>Price:</strong> Rs. {item.price}
+                        <strong>Price:</strong> Rs. {item.price} per litre
                       </p>
                       <p>
                         <strong>Stock:</strong> {item.stock} units

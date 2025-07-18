@@ -180,7 +180,7 @@ const SupplierHistoryPage = () => {
                     <strong>Pesticide:</strong> {selectedSupplier.pesticide}
                   </p>
                   <p>
-                    <strong>Price:</strong> ₹{supplierDetails.price}
+                    <strong>Price:</strong> ₹{supplierDetails.price}/litre
                   </p>
                   <p>
                     <strong>Stock:</strong> {supplierDetails.stock} units

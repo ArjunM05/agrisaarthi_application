@@ -246,7 +246,7 @@ const Pesticides: React.FC = () => {
                       <div className="mt-auto d-flex justify-content-between align-items-center">
                         <div>
                           <strong className="text-success">
-                            ₹{supplier.price}
+                            ₹{supplier.price}/litre
                           </strong>
                           <br />
                           <small className="text-muted">
@@ -299,7 +299,7 @@ const Pesticides: React.FC = () => {
                 <strong>Pesticide:</strong> {selected.pesticide}
               </p>
               <p>
-                <strong>Price:</strong> ₹{selectedSupplier.price}
+                <strong>Price:</strong> ₹{selectedSupplier.price}/litre
               </p>
               <p>
                 <strong>Stock:</strong> {selectedSupplier.stock} units

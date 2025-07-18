@@ -8,7 +8,8 @@ from utils import (
     submit_feedback, log_sms_interaction, log_pest_detection, update_weather_data, get_schemes_by_location,
     get_user_name, get_last_4_pest_images, get_pest_history, get_last_contacted_suppliers,
     get_supplier_inventory, update_inventory, get_user_info, delete_account, get_supplier_details, call_supplier, update_password,
-    forgot_password, verify_otp_and_reset_password, upload_image
+    forgot_password, verify_otp_and_reset_password, upload_image,
+    get_contacts_for_supplier
 )
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
@@ -340,6 +341,11 @@ def contact_route():
             return jsonify({'error': 'Failed to send message'}), 500
     except Exception as e:
         return jsonify({'error': f'Error sending email: {str(e)}'}), 500
+
+@app.route('/contacts_for_supplier/<supplier_id>', methods=['GET'])
+def contacts_for_supplier_route(supplier_id):
+    contacts = get_contacts_for_supplier(supplier_id)
+    return jsonify({'contacts': contacts}), 200
 
 #-------------------------------------------------------------------------------------------------
 

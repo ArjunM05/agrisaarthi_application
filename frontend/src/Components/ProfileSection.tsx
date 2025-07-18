@@ -74,6 +74,7 @@ const ProfileSection: React.FC = () => {
   // Alert states for cards
   const [basicInfoAlert, setBasicInfoAlert] = useState<{message: string, variant: "success" | "danger" | "warning" | "info"} | null>(null);
   const [additionalInfoAlert, setAdditionalInfoAlert] = useState<{message: string, variant: "success" | "danger" | "warning" | "info"} | null>(null);
+  const [pestHistory, setPestHistory] = useState<any[]>([]);
 
   // Auto-dismiss alerts after 1.5 seconds
   useEffect(() => {
@@ -173,6 +174,21 @@ const ProfileSection: React.FC = () => {
               console.error("Error fetching supplier history:", error);
             }
           }
+
+          // Fetch pest history for farmers
+          if (userRole === "farmer" && userId && userId !== "undefined" && userId !== "null") {
+            try {
+              const pestResponse = await fetch(`http://localhost:5001/pest_history/${userId}`);
+              if (pestResponse.ok) {
+                const pestData = await pestResponse.json();
+                if (pestData.history && pestData.history.length > 0) {
+                  setPestHistory(pestData.history.slice(0, 2));
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching pest history:", error);
+            }
+          }
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -196,6 +212,10 @@ const ProfileSection: React.FC = () => {
 
   const handleViewHistory = () => {
     navigate("/farmer/supplier-history");
+  };
+
+  const handleViewPestHistory = () => {
+    navigate("/farmer/pest-history");
   };
 
   const handlePasswordChange = async () => {
@@ -474,6 +494,23 @@ const ProfileSection: React.FC = () => {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return `${diffDays} days ago`;
     }
+  };
+
+  // Add a helper to format the date difference for pest history
+  const formatPestDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    if (dateOnly.getTime() === todayOnly.getTime()) return 'Today';
+    if (dateOnly.getTime() === yesterdayOnly.getTime()) return 'Yesterday';
+    const diffTime = Math.abs(todayOnly.getTime() - dateOnly.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays} days ago`;
   };
 
   const renderHistoryCard = (
@@ -961,10 +998,26 @@ const ProfileSection: React.FC = () => {
         {userRole === "farmer" && (
           <Row className="gy-3">
             <Col md={6}>
-              {renderHistoryCard("Pest History", [
-                { name: "Rice Leaf Roller", detail: "Chlorpyrifos" },
-                { name: "Stem Borer", detail: "Cartap Hydrochloride" },
-              ])}
+              <Card className="mb-3 flex-fill">
+                <Card.Header className="fw-bold d-flex justify-content-between align-items-center">
+                  <span className="fs-5">Pest History</span>
+                  <a href="#" className="text-decoration-none small" onClick={e => { e.preventDefault(); handleViewPestHistory(); }}>
+                    View full history &rarr;
+                  </a>
+                </Card.Header>
+                <Card.Body>
+                  {pestHistory.length > 0 ? (
+                    pestHistory.map((item, index) => (
+                      <div key={index} className="d-flex justify-content-between mb-2">
+                        <span>{item.pest_name ? item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1) : ''}</span>
+                        <span className="text-muted">{formatPestDate(item.prediction_time)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-muted">No pest detections yet</span>
+                  )}
+                </Card.Body>
+              </Card>
             </Col>
             <Col md={6}>
               {renderHistoryCard(

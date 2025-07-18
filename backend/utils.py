@@ -468,14 +468,14 @@ def get_pest_history(user_id: str):
         user_id (int): The user's ID.
     """
     try:
-        result = db.table('pest_inference_results').select('image_url, pest_name, pesticide, dosage').eq('user_id', user_id).order('prediction_time', desc=True).execute()
+        result = db.table('pest_inference_results').select('image_url, pest_name, pesticide, prediction_time').eq('user_id', user_id).order('prediction_time', desc=True).execute()
         if result.data:
             return [
                 {
                     'img_url': row['image_url'],
                     'pest_name': row['pest_name'],
                     'pesticide':row['pesticide'],
-                    'dosage': row['dosage']
+                    'prediction_time': row['prediction_time']
                 }
                 for row in result.data
             ]
@@ -497,27 +497,58 @@ def get_last_contacted_suppliers(farmer_id: str):
         contacts = []
         for row in result.data:
             supplier_id = row.get('supplier_id')
+            # Try users table first
             supplier_result = db.table('users').select('name, phone, email').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
-            if not supplier_result.data:
-                print(f"Error: Supplier with ID {supplier_id} not found.")
-                return []
-            supplier = supplier_result.data[0]
-            supplier_detail=db.table('supplier_details').select('shop_name, address').eq('supplier_id', supplier_id).limit(1).execute()
-            if not supplier_detail.data:
-                print(f"Error: Supplier details with ID {supplier_id} not found.")
-                return []
-            supplier_details=supplier_detail.data[0]
-            contacts.append({
-                'supplier_id': supplier_id,
-                'supplier_name': supplier['name'],
-                'shop_name': supplier_details['shop_name'],
-                'address': supplier_details['address'],
-                'pesticide': row.get('pesticide_name'),
-                'contact_time': row.get('contact_time')
-            })
+            if supplier_result.data:
+                supplier = supplier_result.data[0]
+                supplier_detail = db.table('supplier_details').select('shop_name, address').eq('supplier_id', supplier_id).limit(1).execute()
+                supplier_details = supplier_detail.data[0] if supplier_detail.data else {'shop_name': None, 'address': None}
+                contacts.append({
+                    'supplier_id': supplier_id,
+                    'supplier_name': supplier.get('name'),
+                    'shop_name': supplier_details.get('shop_name'),
+                    'address': supplier_details.get('address'),
+                    'pesticide': row.get('pesticide_name'),
+                    'contact_time': row.get('contact_time')
+                })
+            else:
+                # Try shop_list for unregistered suppliers
+                shop_result = db.table('shop_list').select('shop_name, address, phone, district').eq('id', supplier_id).limit(1).execute()
+                if shop_result.data:
+                    shop = shop_result.data[0]
+                    def format_shop_value(val):
+                        return val if val not in [None, '', 'null'] else 'Not Available'
+                    contacts.append({
+                        'supplier_id': supplier_id,
+                        'supplier_name': format_shop_value(shop.get('shop_name')),
+                        'shop_name': format_shop_value(shop.get('shop_name')),
+                        'address': format_shop_value(shop.get('address')),
+                        'phone': format_shop_value(shop.get('phone')),
+                        'district': format_shop_value(shop.get('district')),
+                        'pesticide': row.get('pesticide_name'),
+                        'contact_time': row.get('contact_time')
+                    })
+                else:
+                    print(f"Error: Supplier with ID {supplier_id} not found in users or shop_list.")
+                    continue
         return contacts
     except Exception as e:
         print(f"Error retrieving contacted suppliers: {e}")
+        return []
+
+def get_contacts_for_supplier(supplier_id: str):
+    """
+    Retrieves all contact records for a supplier.
+    Args:
+        supplier_id (str): The supplier's ID.
+    """
+    try:
+        result = db.table('suppliers_contacted').select('farmer_id, pesticide_name, contact_time').eq('supplier_id', supplier_id).order('contact_time', desc=True).execute()
+        if not result.data:
+            return []
+        return result.data
+    except Exception as e:
+        print(f"Error retrieving contacts for supplier: {e}")
         return []
 
 def get_supplier_inventory(supplier_id):
@@ -592,30 +623,44 @@ def get_supplier_details(pesticide_name: str):
         pesticide_name (str): The name of the pesticide.
     """
     try:
-        result = db.table('pesticide_listings').select('supplier_id, price, stock').eq('pesticide', pesticide_name).execute()
-        if not result.data:
-            return []
         suppliers = []
-        for row in result.data:
-            supplier_id = row.get('supplier_id')
-            supplier_result = db.table('users').select('name').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
-            if not supplier_result.data:
-                print(f"Error: Supplier with ID {supplier_id} not found.")
-                return []
-            supplier = supplier_result.data[0]
-            supplier_detail=db.table('supplier_details').select('shop_name, address').eq('supplier_id', supplier_id).limit(1).execute()
-            if not supplier_detail.data:
-                print(f"Error: Supplier details with ID {supplier_id} not found.")
-                return []
-            supplier_details=supplier_detail.data[0]
-            suppliers.append({
-                'supplier_id': supplier_id,
-                'supplier_name': supplier['name'],
-                'shop_name': supplier_details['shop_name'],
-                'address': supplier_details['address'],
-                'price': row.get('price'),
-                'stock': row.get('stock')
-            })
+        # Registered suppliers
+        result = db.table('pesticide_listings').select('supplier_id, price, stock').eq('pesticide', pesticide_name).execute()
+        if result.data:
+            for row in result.data:
+                supplier_id = row.get('supplier_id')
+                supplier_result = db.table('users').select('name').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
+                if supplier_result.data:
+                    supplier = supplier_result.data[0]
+                    supplier_detail = db.table('supplier_details').select('shop_name, address').eq('supplier_id', supplier_id).limit(1).execute()
+                    supplier_details = supplier_detail.data[0] if supplier_detail.data else {'shop_name': None, 'address': None}
+                    suppliers.append({
+                        'supplier_id': supplier_id,
+                        'supplier_name': supplier.get('name'),
+                        'shop_name': supplier_details.get('shop_name'),
+                        'address': supplier_details.get('address'),
+                        'price': row.get('price'),
+                        'stock': row.get('stock')
+                    })
+        # Unregistered suppliers from product_list/shop_list
+        product_result = db.table('products_list').select('supplier_id, pesticide, price, stock').eq('pesticide', pesticide_name).execute()
+        if product_result.data:
+            for row in product_result.data:
+                supplier_id = row.get('supplier_id')
+                shop_result = db.table('shop_list').select('shop_name, address, phone, district').eq('id', supplier_id).limit(1).execute()
+                shop = shop_result.data[0] if shop_result.data else {'shop_name': None, 'address': None, 'phone': None, 'district': None}
+                def format_shop_value(val):
+                    return val if val not in [None, '', 'null'] else 'Not Available'
+                suppliers.append({
+                    'supplier_id': supplier_id,
+                    'supplier_name': format_shop_value(shop.get('shop_name')),
+                    'shop_name': format_shop_value(shop.get('shop_name')),
+                    'address': format_shop_value(shop.get('address')),
+                    'phone': format_shop_value(shop.get('phone')),
+                    'district': format_shop_value(shop.get('district')),
+                    'price': format_shop_value(row.get('price')),
+                    'stock': format_shop_value(row.get('stock'))
+                })
         return suppliers
     except Exception as e:
         print(f"Error retrieving supplier details: {e}")
@@ -629,18 +674,33 @@ def call_supplier(supplier_id: str, farmer_id: str, pesticide: str):
         supplier_id (int): The supplier's ID.
     """
     try:
+        # Try registered supplier first
         result = db.table('users').select('phone').eq('id', supplier_id).eq('role', 'supplier').limit(1).execute()
-        if not result.data: 
-            print(f"Error: Supplier with ID {supplier_id} not found.")
-            return None
-        contact_details={
-            'farmer_id': farmer_id,
-            'supplier_id': supplier_id,
-            'pesticide_name': pesticide
-        }
-        db.table('suppliers_contacted').insert(contact_details).execute()
-        print(f"Supplier {supplier_id} contacted farmer {farmer_id} for pesticide {pesticide}.")
-        return result.data[0]['phone']
+        if result.data:
+            contact_details = {
+                'farmer_id': farmer_id,
+                'supplier_id': supplier_id,
+                'pesticide_name': pesticide
+            }
+            db.table('suppliers_contacted').insert(contact_details).execute()
+            print(f"Supplier {supplier_id} contacted farmer {farmer_id} for pesticide {pesticide}.")
+            return result.data[0]['phone']
+        # Try unregistered supplier in shop_list
+        shop_result = db.table('shop_list').select('phone').eq('id', supplier_id).limit(1).execute()
+        if shop_result.data:
+            contact_details = {
+                'farmer_id': farmer_id,
+                'supplier_id': supplier_id,
+                'pesticide_name': pesticide
+            }
+            db.table('suppliers_contacted').insert(contact_details).execute()
+            print(f"(Unregistered) Supplier {supplier_id} contacted farmer {farmer_id} for pesticide {pesticide}.")
+            phone = shop_result.data[0].get('phone')
+            def format_shop_value(val):
+                return val if val not in [None, '', 'null'] else 'Not Available'
+            return format_shop_value(phone)
+        print(f"Error: Supplier with ID {supplier_id} not found in users or shop_list.")
+        return None
     except Exception as e:
         print(f"Error retrieving supplier phone: {e}")
         return None

@@ -20,6 +20,7 @@ import RegistrationPage from "./pages/RegistrationPage";
 import ProfilePage from "./pages/ProfileSectionPage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 import RequireAuth from "./Components/RequireAuth";
+import PestHistoryPage from "./pages/PestHistoryPage";
 
 const App = () => {
   const userType = localStorage.getItem("user_type");
@@ -36,6 +37,7 @@ const App = () => {
           <Route path="pest-identification" element={<PestIdentificationPage />} />
           <Route path="pesticide" element={<PesticidesPage />} />
           <Route path="supplier-history" element={<SupplierHistoryPage />} />
+          <Route path="pest-history" element={<PestHistoryPage />} />
         </Route>
         <Route path="/supplier" element={<RequireAuth><SupplierLayout /></RequireAuth>}>
           <Route index element={<SupplierDashboardPage />} />

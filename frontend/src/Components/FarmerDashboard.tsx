@@ -19,6 +19,8 @@ import pest2 from "../assets/pest2.jpg";
 import pest3 from "../assets/pest3.jpg";
 import pest4 from "../assets/pest4.jpg";
 
+import { getLatLonFromDistrict, getWeatherData, getAirQuality } from "../utils/weather";
+
 type FarmerDetails = {
   farm_size?: number;
   main_crop?: string;
@@ -41,27 +43,57 @@ const FarmerDashboard = () => {
   const [additionalInfo, setAdditionalInfo] = useState<FarmerDetails>({});
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const navigate = useNavigate();
-  const [selectedPest, setSelectedPest] = useState<any>(null);
+  const [pestHistory, setPestHistory] = useState<any[]>([]);
   const [showPestModal, setShowPestModal] = useState(false);
+  const [selectedPest, setSelectedPest] = useState<any>(null);
   const [selectedSuppliers, setSelectedSuppliers] = useState<any[]>([]);
-  const [recentPestImages, setRecentPestImages] = useState<string[]>([]);
 
   useEffect(() => {
-    
-    // Use backend weather data instead of external API
-    const userDistrict = user_district || "Delhi"; // Default to Delhi if no district
-    fetch(
-      `http://localhost:5001/weather_data/${encodeURIComponent(userDistrict)}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.weather_data) {
-          setWeather(data.weather_data);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching weather:", error);
-      });
+    let didAskLocation = false;
+    async function fetchWeather() {
+      let lat: number | undefined, lon: number | undefined;
+      // Try geolocation
+      try {
+        await new Promise<void>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              lat = pos.coords.latitude;
+              lon = pos.coords.longitude;
+              didAskLocation = true;
+              resolve();
+            },
+            async () => {
+              // If denied, fallback to district geocoding
+              try {
+                const coords = await getLatLonFromDistrict(user_district || "Chennai");
+                lat = coords.lat;
+                lon = coords.lon;
+                resolve();
+              } catch {
+                reject();
+              }
+            }
+          );
+        });
+      } catch {
+        // fallback: Delhi
+        lat = 28.6139;
+        lon = 77.2090;
+      }
+
+      // Ensure lat/lon are defined
+      if (typeof lat !== "number" || typeof lon !== "number") {
+        lat = 28.6139;
+        lon = 77.2090;
+      }
+
+      // Fetch weather and air quality
+      const weather = await getWeatherData(Number(lat), Number(lon));
+      const air = await getAirQuality(Number(lat), Number(lon));
+      setWeather({ ...weather, air });
+    }
+
+    fetchWeather();
 
     // Fetch contacted suppliers
     if (user_id) {
@@ -142,11 +174,25 @@ const FarmerDashboard = () => {
         .then((res) => res.json())
         .then((data) => {
           if (data.images) {
-            setRecentPestImages(data.images);
+            // setRecentPestImages(data.images); // This state is no longer used for recent images
           }
         })
         .catch((error) => {
           console.error("Error fetching recent pest images:", error);
+        });
+    }
+
+    // Fetch pest history for this user
+    if (user_id && user_id !== "undefined" && user_id !== "null") {
+      fetch(`http://localhost:5001/pest_history/${user_id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.history) {
+            setPestHistory(data.history);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching pest history:", error);
         });
     }
   }, [user_id, user_district]);
@@ -239,12 +285,14 @@ const FarmerDashboard = () => {
 
   const handlePestImageClick = (pestItem: any) => {
     setSelectedPest(pestItem);
-    // Find all suppliers matching pesticide name
-    const matchingSuppliers = suppliers.filter(
-      (s) => s.pesticide === pestItem.pesticide
-    );
+    // Find all suppliers matching any pesticide in pestItem.pesticide (comma separated)
+    const pesticides = (pestItem.pesticide || "").split(",").map((p: string) => p.trim());
+    const matchingSuppliers = suppliers.filter((s) => pesticides.includes(s.pesticide));
     setSelectedSuppliers(matchingSuppliers);
     setShowPestModal(true);
+  };
+  const handleViewPestHistory = () => {
+    navigate("/farmer/pest-history");
   };
 
   return (
@@ -281,48 +329,42 @@ const FarmerDashboard = () => {
                     <div className="row">
                       <div className="col-md-6">
                         <p>
-                          <FaThermometerHalf className="me-2" /> Temperature:{" "}
-                          {weather.current?.temp_c}°C
+                          <FaThermometerHalf className="me-2" /> Temperature: {weather.current?.temperature}°C
                         </p>
                         <p>
-                          <FaWind className="me-2" /> Wind:{" "}
-                          {weather.current?.wind_kph} km/h
+                          <FaWind className="me-2" /> Wind: {weather.current?.wind_speed} km/h
                         </p>
                         <p>
-                          <FaTint className="me-2" /> Humidity:{" "}
-                          {weather.current?.humidity}%
+                          <FaTint className="me-2" /> Rain: {weather.current?.rain} mm
                         </p>
                       </div>
                       <div className="col-md-6">
                         <p>
-                          <FaCompass className="me-2" /> Wind Direction:{" "}
-                          {weather.current?.wind_dir}
+                          <FaCompass className="me-2" /> Wind Direction: {weather.current?.wind_direction}°
                         </p>
                         <p>
-                          <FaSun className="me-2" /> UV Index:{" "}
-                          {weather.current?.uv}
+                          <FaSun className="me-2" /> UV Index: {weather.current?.solar_irradiance}
                         </p>
                         <p>
-                          <FaWater className="me-2" /> Feels Like:{" "}
-                          {weather.current?.feelslike_c}°C
+                          <FaTint className="me-2" /> Humidity: {weather.current?.humidity}%
                         </p>
                       </div>
                     </div>
                     <div className="mt-4">
                       <h6>3-Day Forecast</h6>
                       <div className="row">
-                        {weather.forecast?.forecastday
-                          ?.slice(0, 3)
-                          .map((day: any, i: number) => (
-                            <div className="col-md-4" key={i}>
-                              <div className="border rounded p-2 text-center shadow-sm">
-                                <strong>{day.date}</strong>
-                                <p>Max: {day.day.maxtemp_c}°C</p>
-                                <p>Min: {day.day.mintemp_c}°C</p>
-                                <p>Rain: {day.day.totalprecip_mm} mm</p>
+                        {weather.forecast?.map((day: any, i: number) => (
+                          <div className="col-md-4" key={i}>
+                            <div className="border rounded p-2 text-center shadow-sm">
+                              <div style={{ color: 'white', background: '#007e33', borderRadius: '4px', padding: '4px 0', marginBottom: 8 }}>
+                                <strong>{(() => { const d = new Date(day.date); return d.toLocaleDateString('en-GB'); })()}</strong>
                               </div>
+                              <p><FaThermometerHalf className="me-2" />Temperature: {day.temperature_max}°C</p>
+                              <p><FaTint className="me-2" />Rain: {day.rain || 0} mm</p>
+                              <p><FaWind className="me-2" />Wind: {day.wind_speed} km/h</p>
                             </div>
-                          ))}
+                          </div>
+                        ))}
                       </div>
                     </div>
                     <small className="text-muted text-end d-block mt-3">
@@ -375,16 +417,13 @@ const FarmerDashboard = () => {
                 {weather ? (
                   <Card.Body>
                     <p>
-                      <FaThermometerHalf className="me-2" /> Temperature:{" "}
-                      {weather.current?.temp_c}°C
+                      <FaThermometerHalf className="me-2" /> Temperature: {weather.current?.temperature}°C
                     </p>
                     <p>
-                      <FaWind className="me-2" /> Wind:{" "}
-                      {weather.current?.wind_kph} km/h
+                      <FaWind className="me-2" /> Wind: {weather.current?.wind_speed} km/h
                     </p>
                     <p>
-                      <FaTint className="me-2" /> Humidity:{" "}
-                      {weather.current?.humidity}%
+                      <FaTint className="me-2" /> Rain: {weather.current?.rain} mm
                     </p>
                     <small className="text-muted text-end d-block">
                       Click to expand ↓
@@ -420,44 +459,167 @@ const FarmerDashboard = () => {
       </div>
 
       {/* Pest and Supplier History Side-by-Side */}
-      <div className="row mb-4">
-        <div className="col-md-6">
-          <Card className="p-3 shadow-sm">
+      <div className="row mb-4 align-items-stretch">
+        <div className="col-md-6 h-100 d-flex flex-column">
+          <Card className="p-3 shadow-sm h-100 d-flex flex-column">
             <Card.Title className="d-flex justify-content-between align-items-center">
               <span>Recent Pest Identifications</span>
-              <a href="#" className="text-decoration-none small">
+              <a href="#" className="text-decoration-none small" onClick={(e) => { e.preventDefault(); handleViewPestHistory(); }}>
                 View history →
               </a>
             </Card.Title>
-            <Card.Body>
-              <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-                <div className="row">
-                  {recentPestImages.length > 0 ? (
-                    recentPestImages.map((img, i) => (
-                      <div key={i} className="col-6 mb-3">
+            <Card.Body className="flex-grow-1 d-flex flex-column justify-content-center align-items-stretch mt-3">
+              {(() => {
+                let imagesToShow = [];
+                if (pestHistory.length >= 4) {
+                  imagesToShow = pestHistory.slice(0, 4);
+                } else if (pestHistory.length === 3 || pestHistory.length === 2) {
+                  imagesToShow = pestHistory.slice(0, 2);
+                } else if (pestHistory.length === 1) {
+                  imagesToShow = pestHistory.slice(0, 1);
+                }
+                if (imagesToShow.length === 1) {
+                  // Single image, fill card
+                  const item = imagesToShow[0];
+                  return (
+                    <div className="w-100 h-100 d-flex align-items-center justify-content-center" style={{ minHeight: "180px", height: "100%" }}>
+                      <div
+                        className="position-relative w-100 h-100 border rounded shadow-sm"
+                        style={{ cursor: "pointer", overflow: "hidden", height: "180px", maxWidth: "100%" }}
+                        onClick={() => handlePestImageClick(item)}
+                      >
                         <img
-                          src={img}
-                          alt={`Pest ${i + 1}`}
-                          className="pest-hover-image"
-                          style={{
-                            maxWidth: "270px",
-                            maxHeight: "100px",
-                            objectFit: "cover",
-                          }}
+                          src={item.img_url}
+                          alt={`Pest 1`}
+                          style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
                         />
+                        <div
+                          className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
+                          style={{ fontSize: "1em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                        >
+                          {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                        </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-muted">No recent pest images found.</div>
-                  )}
-                </div>
-              </div>
+                    </div>
+                  );
+                } else if (imagesToShow.length === 2) {
+                  // Two images, split vertically
+                  return (
+                    <div className="d-flex flex-column h-100" style={{ minHeight: "180px" }}>
+                      {imagesToShow.map((item, i) => (
+                        <div
+                          key={i}
+                          className="flex-fill position-relative border rounded shadow-sm mb-2"
+                          style={{ cursor: "pointer", overflow: "hidden", height: "85px", maxWidth: "100%" }}
+                          onClick={() => handlePestImageClick(item)}
+                        >
+                          <img
+                            src={item.img_url}
+                            alt={`Pest ${i + 1}`}
+                            style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
+                          />
+                          <div
+                            className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
+                            style={{ fontSize: "0.95em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                          >
+                            {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                } else if (imagesToShow.length === 4) {
+                  // 2x2 grid
+                  return (
+                    <div className="d-flex flex-column h-100 w-100" style={{ minHeight: "180px", height: "100%" }}>
+                      <div className="d-flex flex-row flex-fill w-100" style={{ height: "50%" }}>
+                        {[0, 1].map((col) => {
+                          const item = imagesToShow[col];
+                          return (
+                            <div
+                              key={col}
+                              className="flex-fill position-relative border rounded shadow-sm mx-1 mb-4"
+                              style={{ cursor: "pointer", overflow: "hidden", width: "50%", height: "100%" }}
+                              onClick={() => handlePestImageClick(item)}
+                            >
+                              <img
+                                src={item.img_url}
+                                alt={`Pest ${col + 1}`}
+                                style={{ width: "100%", height: "100%", maxHeight: "90px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
+                              />
+                              <div
+                                className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
+                                style={{ fontSize: "0.95em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                              >
+                                {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="d-flex flex-row flex-fill w-100" style={{ height: "50%" }}>
+                        {[2, 3].map((col) => {
+                          const item = imagesToShow[col];
+                          return (
+                            <div
+                              key={col}
+                              className="flex-fill position-relative border rounded shadow-sm mx-1"
+                              style={{ cursor: "pointer", overflow: "hidden", width: "50%", height: "100%" }}
+                              onClick={() => handlePestImageClick(item)}
+                            >
+                              <img
+                                src={item.img_url}
+                                alt={`Pest ${col + 1}`}
+                                style={{ width: "100%", height: "100%", maxHeight: "90px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
+                              />
+                              <div
+                                className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
+                                style={{ fontSize: "0.95em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                              >
+                                {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                } else if (imagesToShow.length > 0) {
+                  // fallback: just show in a row
+                  return (
+                    <div className="d-flex h-100 align-items-center">
+                      {imagesToShow.map((item, i) => (
+                        <div
+                          key={i}
+                          className="position-relative border rounded shadow-sm mx-1"
+                          style={{ cursor: "pointer", overflow: "hidden", height: "100px", maxWidth: "100%" }}
+                          onClick={() => handlePestImageClick(item)}
+                        >
+                          <img
+                            src={item.img_url}
+                            alt={`Pest ${i + 1}`}
+                            style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
+                          />
+                          <div
+                            className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
+                            style={{ fontSize: "0.95em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                          >
+                            {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                } else {
+                  return <div className="text-muted">No recent pest images found.</div>;
+                }
+              })()}
             </Card.Body>
           </Card>
         </div>
 
-        <div className="col-md-6">
-          <Card className="p-3 shadow-sm">
+        <div className="col-md-6 h-100 d-flex flex-column">
+          <Card className="p-3 shadow-sm h-100 d-flex flex-column">
             <Card.Title className="d-flex justify-content-between align-items-center">
               <span>Suppliers Contacted Recently</span>
               <a
@@ -471,12 +633,12 @@ const FarmerDashboard = () => {
                 View history →
               </a>
             </Card.Title>
-            <Card.Body>
+            <Card.Body className="flex-grow-1 d-flex flex-column justify-content-center align-items-stretch">
               {loadingSuppliers ? (
                 <div className="text-center text-muted">Loading history...</div>
               ) : suppliers.length > 0 ? (
                 <div
-                  className="border rounded p-3 shadow-sm mb-2"
+                  className="border rounded p-3 shadow-sm mb-0"
                   style={{ cursor: "pointer" }}
                   onClick={() => handleSupplierClick(suppliers[0])}
                 >
@@ -491,7 +653,7 @@ const FarmerDashboard = () => {
                       suppliers[0].contact_time.slice(0, 4)}
                   </p>
                   <button
-                    className="btn btn-outline-success fw-medium btn-sm mt-3"
+                    className="btn btn-outline-success fw-medium btn-sm mt-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCallSupplier(
@@ -502,7 +664,7 @@ const FarmerDashboard = () => {
                   >
                     📞 Call Supplier
                   </button>
-                  <small className="text-muted text-end d-block">
+                  <small className="text-muted text-end d-block mt-1">
                     Click for detailed view
                   </small>
                 </div>
@@ -530,7 +692,7 @@ const FarmerDashboard = () => {
                 <strong>Pesticide:</strong> {selectedSupplier.pesticide}
               </p>
               <p>
-                <strong>Price:</strong> ₹{supplierDetails.price}
+                <strong>Price:</strong> ₹{supplierDetails.price}/litre
               </p>
               <p>
                 <strong>Stock:</strong> {supplierDetails.stock} units
@@ -581,36 +743,28 @@ const FarmerDashboard = () => {
         <Modal.Body>
           {selectedPest && (
             <>
-              <h4 className = "mb-3">Pest: {selectedPest.pest}</h4>
-              
-              <h5 className = "mb-4">Pesticide: {selectedPest.pesticide}</h5> 
-              <p className="mb-3"><b>Supplier Contacted for this Pesticide:</b></p>
+              <h4 className="mb-3">Pest: {selectedPest.pest_name && selectedPest.pest_name.charAt(0).toUpperCase() + selectedPest.pest_name.slice(1)}</h4>
+              <h5 className="mb-4">Pesticide(s): {selectedPest.pesticide || "-"}</h5>
+              <p className="mb-3"><b>Suppliers Contacted for these Pesticides:</b></p>
               {selectedSuppliers.length > 0 ? (
                 selectedSuppliers.map((supplier, idx) => (
                   <div className="card p-3 mb-3" key={idx}>
-                    <h6>Supplier Details</h6>
+                    <h6 className="mb-2"><strong>{supplier.pesticide}</strong></h6>
                     <p>
-                      <strong>Shop Name:</strong> {supplier.shop_name}
-                      <br />
-                      <strong>Supplier Name:</strong> {supplier.supplier_name}
-                      <br />
+                      <strong>Shop Name:</strong> {supplier.shop_name}<br />
+                      <strong>Supplier Name:</strong> {supplier.supplier_name}<br />
                       <strong>Contacted On:</strong> {supplier.contact_time?.slice(0, 10)}
                     </p>
                     <button
                       className="btn btn-outline-success fw-medium"
-                      onClick={() =>
-                        handleCallSupplier(
-                          supplier.supplier_id,
-                          supplier.pesticide
-                        )
-                      }
+                      onClick={() => handleCallSupplier(supplier.supplier_id, supplier.pesticide)}
                     >
                       📞 Call Supplier
                     </button>
                   </div>
                 ))
               ) : (
-                <p>No supplier contact found for this pesticide.</p>
+                <p>You have not contacted any suppliers related to these pesticides.</p>
               )}
             </>
           )}
