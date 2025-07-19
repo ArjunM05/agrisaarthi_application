@@ -156,7 +156,7 @@ const ProfileSection: React.FC = () => {
         // Fetch additional info from backend
         if (userId && userId !== "undefined" && userId !== "null") {
           const response = await fetch(
-            `http://localhost:5001/user_info/${userId}`
+            `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/user_info/${userId}`
           );
           if (response.ok) {
             const userInfo = await response.json();
@@ -170,7 +170,7 @@ const ProfileSection: React.FC = () => {
           if (userRole === "farmer") {
             try {
               const historyResponse = await fetch(
-                `http://localhost:5001/last_contacted_suppliers/${userId}`
+                `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${userId}`
               );
               if (historyResponse.ok) {
                 const historyData = await historyResponse.json();
@@ -194,7 +194,7 @@ const ProfileSection: React.FC = () => {
           ) {
             try {
               const pestResponse = await fetch(
-                `http://localhost:5001/pest_history/${userId}`
+                `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/pest_history/${userId}`
               );
               if (pestResponse.ok) {
                 const pestData = await pestResponse.json();
@@ -259,7 +259,7 @@ const ProfileSection: React.FC = () => {
 
     setPasswordLoading(true);
     try {
-      const response = await fetch(`http://localhost:5001/update_password`, {
+      const response = await fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/update_password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -319,7 +319,7 @@ const ProfileSection: React.FC = () => {
     setDeleteLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5001/delete_account/${user.id}`,
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/delete_account/${user.id}`,
         {
           method: "DELETE",
           headers: {
@@ -375,7 +375,7 @@ const ProfileSection: React.FC = () => {
       if (section === "basic") {
         // Update basic info
         const response = await fetch(
-          `http://localhost:5001/update_profile/${user.id}`,
+          `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/update_profile/${user.id}`,
           {
             method: "PUT",
             headers: {
@@ -418,7 +418,7 @@ const ProfileSection: React.FC = () => {
         if (userRole === "farmer") {
           const farmerDetails = editAdditional as FarmerDetails;
           const response = await fetch(
-            `http://localhost:5001/farmer_details/${user.id}`,
+            `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/farmer_details/${user.id}`,
             {
               method: "PUT",
               headers: {
@@ -455,7 +455,7 @@ const ProfileSection: React.FC = () => {
         } else if (userRole === "supplier") {
           const supplierDetails = editAdditional as SupplierDetails;
           const response = await fetch(
-            `http://localhost:5001/supplier_details/${user.id}`,
+            `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details/${user.id}`,
             {
               method: "PUT",
               headers: {

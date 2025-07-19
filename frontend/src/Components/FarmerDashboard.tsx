@@ -94,7 +94,7 @@ const FarmerDashboard = () => {
 
     // Fetch contacted suppliers
     if (user_id) {
-      fetch(`http://localhost:5001/last_contacted_suppliers/${user_id}`)
+      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${user_id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.contacts && data.contacts.length > 0) {
@@ -114,7 +114,7 @@ const FarmerDashboard = () => {
     // Fetch schemes for user's district
     if (user_district) {
       fetch(
-        `http://localhost:5001/schemes/${encodeURIComponent(user_district)}`
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/schemes/${encodeURIComponent(user_district)}`
       )
         .then((res) => res.json())
         .then((data) => {
@@ -149,7 +149,7 @@ const FarmerDashboard = () => {
 
     // Fetch additional info from backend
     if (user_id && user_id !== "undefined" && user_id !== "null") {
-      fetch(`http://localhost:5001/user_info/${user_id}`)
+      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/user_info/${user_id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.details) {
@@ -163,7 +163,7 @@ const FarmerDashboard = () => {
 
     // Fetch latest pest images for this user
     if (user_id && user_id !== "undefined" && user_id !== "null") {
-      fetch("http://localhost:5001/last_pest_images", {
+      fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_pest_images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id }),
@@ -181,7 +181,7 @@ const FarmerDashboard = () => {
 
     // Fetch pest history for this user
     if (user_id && user_id !== "undefined" && user_id !== "null") {
-      fetch(`http://localhost:5001/pest_history/${user_id}`)
+      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/pest_history/${user_id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.history) {
@@ -218,7 +218,7 @@ const FarmerDashboard = () => {
 
     // Fetch supplier details
     try {
-      const response = await fetch("http://localhost:5001/supplier_details", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -253,7 +253,7 @@ const FarmerDashboard = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5001/call_supplier", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

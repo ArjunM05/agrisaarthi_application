@@ -22,7 +22,7 @@ const ContactPageContent: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch("http://localhost:5001/feedback", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id, rating, comments: comment }),
@@ -50,7 +50,7 @@ const ContactPageContent: React.FC = () => {
     const user_name = localStorage.getItem("user_name") || "Unknown User";
     const user_email = localStorage.getItem("user_email") || "Unknown Email";
     try {
-      const response = await fetch("http://localhost:5001/contact", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

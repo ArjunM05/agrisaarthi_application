@@ -62,13 +62,27 @@ const LoginForm = () => {
     }
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:5001/login", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
       if (response.ok && data.status === "success") {
+        // Store all user data in localStorage
+        localStorage.setItem("user_id", data.user_id);
+        localStorage.setItem("user_name", data.name);
+        localStorage.setItem("user_email", data.email);
+        localStorage.setItem("user_type", data.role);
+        localStorage.setItem("user_district", data.district);
+        localStorage.setItem("user_phone", data.phone);
+        
+        
+        // Store additional info if available
+        
+        // Store login status
+        localStorage.setItem("isLoggedIn", "true");
+        
         showToast("Login Successful", data.message || "Welcome back!");
         // You may want to redirect based on user role here if needed
         navigate("/");
@@ -118,7 +132,7 @@ const LoginForm = () => {
 
     setForgotPasswordLoading(true);
     try {
-      const response = await fetch("http://localhost:5001/forgot_password", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/forgot_password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -158,7 +172,7 @@ const LoginForm = () => {
 
     setResetPasswordLoading(true);
     try {
-      const response = await fetch("http://localhost:5001/reset_password", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/reset_password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

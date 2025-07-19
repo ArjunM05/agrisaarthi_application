@@ -14,7 +14,7 @@ const SupplierHistoryPage = () => {
   useEffect(() => {
     setLoading(true);
     if (user_id) {
-      fetch(`http://localhost:5001/last_contacted_suppliers/${user_id}`)
+      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${user_id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.contacts && data.contacts.length > 0) {
@@ -35,7 +35,7 @@ const SupplierHistoryPage = () => {
 
     // Fetch supplier details
     try {
-      const response = await fetch("http://localhost:5001/supplier_details", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -70,7 +70,7 @@ const SupplierHistoryPage = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5001/call_supplier", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

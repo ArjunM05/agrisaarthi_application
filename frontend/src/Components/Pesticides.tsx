@@ -79,7 +79,7 @@ const Pesticides: React.FC = () => {
   const fetchSuppliersForPesticide = async (pesticideName: string) => {
     setLoadingSuppliers(true);
     try {
-      const response = await fetch("http://localhost:5001/supplier_details", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +128,7 @@ const Pesticides: React.FC = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5001/call_supplier", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

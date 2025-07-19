@@ -15,7 +15,7 @@ const PestHistoryPage = () => {
   useEffect(() => {
     setLoading(true);
     if (user_id) {
-      fetch(`http://localhost:5001/pest_history/${user_id}`)
+      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/pest_history/${user_id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.history) {
@@ -25,7 +25,7 @@ const PestHistoryPage = () => {
         .catch((error) => {
           console.error("Error fetching pest history:", error);
         });
-      fetch(`http://localhost:5001/last_contacted_suppliers/${user_id}`)
+      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${user_id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.contacts && data.contacts.length > 0) {

@@ -21,12 +21,11 @@ import ProfilePage from "./pages/ProfileSectionPage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 import RequireAuth from "./Components/RequireAuth";
 import PestHistoryPage from "./pages/PestHistoryPage";
-import { AuthProvider } from "./utils/AuthProvider";
 
 const App = () => {
   const userType = localStorage.getItem("user_type");
   return (
-    <AuthProvider>
+    
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -79,7 +78,7 @@ const App = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </AuthProvider>
+    
   );
 };
 

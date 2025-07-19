@@ -77,7 +77,7 @@ const SupplierDashboard = () => {
 
     // Fetch additional info from backend
     if (userId && userId !== "undefined" && userId !== "null") {
-      fetch(`http://localhost:5001/user_info/${userId}`)
+      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/user_info/${userId}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.details) {
@@ -91,11 +91,11 @@ const SupplierDashboard = () => {
 
     // Fetch all contacts for popularity stats
     if (userId) {
-      fetch(`http://localhost:5001/contacts_for_supplier/${userId}`)
+      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/contacts_for_supplier/${userId}`)
         .then((res) => res.json())
         .then((data) => setContacts(data.contacts || []));
       // Fetch inventory
-      fetch(`http://localhost:5001/supplier_inventory/${userId}`)
+      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_inventory/${userId}`)
         .then((res) => res.json())
         .then((data) => setInventory(data.inventory || []));
     }

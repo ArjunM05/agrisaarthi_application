@@ -173,7 +173,7 @@ const Registration = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:5001/register", {
+      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

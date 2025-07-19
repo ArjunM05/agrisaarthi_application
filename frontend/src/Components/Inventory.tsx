@@ -87,7 +87,7 @@ const SupplierInventory = () => {
     setFetchingInventory(true);
     try {
       const response = await fetch(
-        `http://localhost:5001/supplier_inventory/${userId}`
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_inventory/${userId}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -154,7 +154,7 @@ const SupplierInventory = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5001/update_inventory/${userId}`,
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/update_inventory/${userId}`,
         {
           method: "PUT",
           headers: {
@@ -204,7 +204,7 @@ const SupplierInventory = () => {
     try {
       // Set stock to 0 to effectively "delete" the item
       const response = await fetch(
-        `http://localhost:5001/update_inventory/${userId}`,
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/update_inventory/${userId}`,
         {
           method: "PUT",
           headers: {
