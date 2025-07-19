@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Toast, ToastContainer } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import supabase from "../utils/supabase";
 
 const districts = [
   "Ariyalur",
@@ -41,12 +42,14 @@ const districts = [
   "Tiruvarur",
   "Vellore",
   "Viluppuram",
-  "Virudhunagar"
+  "Virudhunagar",
 ];
 
 // Fuzzy search helper (Levenshtein distance)
 function levenshtein(a: string, b: string) {
-  const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+  const matrix = Array.from({ length: a.length + 1 }, () =>
+    Array(b.length + 1).fill(0)
+  );
   for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
   for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
   for (let i = 1; i <= a.length; i++) {
@@ -54,11 +57,9 @@ function levenshtein(a: string, b: string) {
       if (a[i - 1].toLowerCase() === b[j - 1].toLowerCase()) {
         matrix[i][j] = matrix[i - 1][j - 1];
       } else {
-        matrix[i][j] = 1 + Math.min(
-          matrix[i - 1][j],
-          matrix[i][j - 1],
-          matrix[i - 1][j - 1]
-        );
+        matrix[i][j] =
+          1 +
+          Math.min(matrix[i - 1][j], matrix[i][j - 1], matrix[i - 1][j - 1]);
       }
     }
   }
@@ -188,22 +189,22 @@ const Registration = () => {
       if (response.ok) {
         showToast(
           "Registration Successful",
-          `Welcome to AgriSaarthi! Your account has been created. Please login.`,
+          data.message ||
+            "Welcome to AgroSaarthi! Your account has been created. Please login.",
           "success"
         );
         setTimeout(() => navigate("/login"), 1500);
       } else {
         showToast(
           "Registration Failed",
-          `Error Code: ${data.error}` ||
-            "An error occurred during registration.",
+          data.error || "An error occurred during registration.",
           "danger"
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       showToast(
         "Connection Error",
-        "Unable to connect to server. Please try again later.",
+        error.message || "Unable to connect to server. Please try again later.",
         "danger"
       );
     } finally {
@@ -340,7 +341,7 @@ const Registration = () => {
                     width: "100%",
                   }}
                 >
-                  {districtOptions.map((option, idx) => (
+                  {districtOptions.map((option) => (
                     <div
                       key={option}
                       style={{
@@ -363,25 +364,40 @@ const Registration = () => {
             </div>
 
             <div className="mb-3">
-              <label
-                htmlFor="role"
-                className="form-label text-uppercase fw-medium text-muted small"
-              >
+              <label className="form-label text-uppercase fw-medium text-muted small">
                 ROLE*
               </label>
-              <select
-                id="role"
-                value={formData.role}
-                onChange={(e) => handleInputChange("role", e.target.value)}
-                className="form-select"
-                required
-              >
-                <option value="" disabled selected hidden>
-                  Select Role
-                </option>
-                <option value="farmer">Farmer</option>
-                <option value="supplier">Supplier</option>
-              </select>
+              <div className="d-flex justify-content-center gap-4">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="role"
+                    id="role-farmer"
+                    value="farmer"
+                    checked={formData.role === "farmer"}
+                    onChange={() => handleInputChange("role", "farmer")}
+                    required
+                  />
+                  <label className="form-check-label" htmlFor="role-farmer">
+                    Farmer
+                  </label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="role"
+                    id="role-supplier"
+                    value="supplier"
+                    checked={formData.role === "supplier"}
+                    onChange={() => handleInputChange("role", "supplier")}
+                  />
+                  <label className="form-check-label" htmlFor="role-supplier">
+                    Supplier
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="row justify-content-md-center">

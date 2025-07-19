@@ -8,10 +8,13 @@ import {
   FaTint,
   FaCompass,
   FaSun,
-  FaWater,
 } from "react-icons/fa";
 import ChatBot from "./ChatBot";
-import { getLatLonFromDistrict, getWeatherData, getAirQuality } from "../utils/weather";
+import {
+  getLatLonFromDistrict,
+  getWeatherData,
+  getAirQuality,
+} from "../utils/weather";
 
 type SupplierDetails = {
   shop_name?: string;
@@ -46,7 +49,9 @@ const SupplierDashboard = () => {
             },
             async () => {
               try {
-                const coords = await getLatLonFromDistrict(localStorage.getItem("user_district") || "Delhi");
+                const coords = await getLatLonFromDistrict(
+                  localStorage.getItem("user_district") || "Delhi"
+                );
                 lat = coords.lat;
                 lon = coords.lon;
                 resolve();
@@ -58,11 +63,11 @@ const SupplierDashboard = () => {
         });
       } catch {
         lat = 28.6139;
-        lon = 77.2090;
+        lon = 77.209;
       }
       if (typeof lat !== "number" || typeof lon !== "number") {
         lat = 28.6139;
-        lon = 77.2090;
+        lon = 77.209;
       }
       const weatherData = await getWeatherData(Number(lat), Number(lon));
       const air = await getAirQuality(Number(lat), Number(lon));
@@ -87,12 +92,12 @@ const SupplierDashboard = () => {
     // Fetch all contacts for popularity stats
     if (userId) {
       fetch(`http://localhost:5001/contacts_for_supplier/${userId}`)
-        .then(res => res.json())
-        .then(data => setContacts(data.contacts || []));
+        .then((res) => res.json())
+        .then((data) => setContacts(data.contacts || []));
       // Fetch inventory
       fetch(`http://localhost:5001/supplier_inventory/${userId}`)
-        .then(res => res.json())
-        .then(data => setInventory(data.inventory || []));
+        .then((res) => res.json())
+        .then((data) => setInventory(data.inventory || []));
     }
   }, [userId]);
 
@@ -100,7 +105,10 @@ const SupplierDashboard = () => {
   useEffect(() => {
     if (additionalInfo) {
       const hasEmpty = Object.values(additionalInfo).some(
-        (v) => v === null || v === undefined  || (typeof v === "string" && v.trim() === "")
+        (v) =>
+          v === null ||
+          v === undefined ||
+          (typeof v === "string" && v.trim() === "")
       );
       setShowAlert(hasEmpty);
     }
@@ -108,15 +116,19 @@ const SupplierDashboard = () => {
 
   // Find top 3 most popular pesticides from all contacts
   const pesticideCount: Record<string, number> = {};
-  contacts.forEach(c => {
-    if (c.pesticide_name) pesticideCount[c.pesticide_name] = (pesticideCount[c.pesticide_name] || 0) + 1;
+  contacts.forEach((c) => {
+    if (c.pesticide_name)
+      pesticideCount[c.pesticide_name] =
+        (pesticideCount[c.pesticide_name] || 0) + 1;
   });
-  const sortedPopular = Object.entries(pesticideCount).sort((a, b) => b[1] - a[1]);
+  const sortedPopular = Object.entries(pesticideCount).sort(
+    (a, b) => b[1] - a[1]
+  );
   const topPopular = sortedPopular.slice(0, 5);
 
   // Find low stock pesticides, sort by stock ascending, show only 5
   const lowStock = inventory
-    .filter(item => item.stock !== undefined && item.stock < 10)
+    .filter((item) => item.stock !== undefined && item.stock < 10)
     .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0))
     .slice(0, 5);
 
@@ -157,25 +169,30 @@ const SupplierDashboard = () => {
                     <div className="row">
                       <div className="col-md-6">
                         <p>
-                          <FaThermometerHalf className="me-2" /> Temperature: {weather.current?.temperature}°C
+                          <FaThermometerHalf className="me-2" /> Temperature:{" "}
+                          {weather.current?.temperature}°C
                         </p>
                         <p>
-                          <FaWind className="me-2" /> Wind: {weather.current?.wind_speed} km/h
+                          <FaWind className="me-2" /> Wind:{" "}
+                          {weather.current?.wind_speed} km/h
                         </p>
                         <p>
-                          <FaTint className="me-2" /> Rain: {weather.current?.rain} mm
+                          <FaTint className="me-2" /> Rain:{" "}
+                          {weather.current?.rain} mm
                         </p>
-              
                       </div>
                       <div className="col-md-6">
                         <p>
-                          <FaCompass className="me-2" /> Wind Direction: {weather.current?.wind_direction}°
+                          <FaCompass className="me-2" /> Wind Direction:{" "}
+                          {weather.current?.wind_direction}°
                         </p>
                         <p>
-                          <FaSun className="me-2" /> UV Index: {weather.current?.solar_irradiance}
+                          <FaSun className="me-2" /> UV Index:{" "}
+                          {weather.current?.solar_irradiance}
                         </p>
                         <p>
-                          <FaTint className="me-2" /> Humidity: {weather.current?.humidity}%
+                          <FaTint className="me-2" /> Humidity:{" "}
+                          {weather.current?.humidity}%
                         </p>
                       </div>
                     </div>
@@ -185,12 +202,34 @@ const SupplierDashboard = () => {
                         {weather.forecast?.map((day: any, i: number) => (
                           <div className="col-md-4" key={i}>
                             <div className="border rounded p-2 text-center shadow-sm">
-                              <div style={{ color: 'white', background: '#007e33', borderRadius: '4px', padding: '4px 0', marginBottom: 8 }}>
-                                <strong>{(() => { const d = new Date(day.date); return d.toLocaleDateString('en-GB'); })()}</strong>
+                              <div
+                                style={{
+                                  color: "white",
+                                  background: "#007e33",
+                                  borderRadius: "4px",
+                                  padding: "4px 0",
+                                  marginBottom: 8,
+                                }}
+                              >
+                                <strong>
+                                  {(() => {
+                                    const d = new Date(day.date);
+                                    return d.toLocaleDateString("en-GB");
+                                  })()}
+                                </strong>
                               </div>
-                              <p><FaThermometerHalf className="me-2" />Temperature: {day.temperature_max}°C</p>
-                              <p><FaTint className="me-2" />Rain: {day.rain || 0} mm</p>
-                              <p><FaWind className="me-2" />Wind: {day.wind_speed} km/h</p>
+                              <p>
+                                <FaThermometerHalf className="me-2" />
+                                Temperature: {day.temperature_max}°C
+                              </p>
+                              <p>
+                                <FaTint className="me-2" />
+                                Rain: {day.rain || 0} mm
+                              </p>
+                              <p>
+                                <FaWind className="me-2" />
+                                Wind: {day.wind_speed} km/h
+                              </p>
                             </div>
                           </div>
                         ))}
@@ -235,13 +274,16 @@ const SupplierDashboard = () => {
                 {weather ? (
                   <Card.Body>
                     <p>
-                      <FaThermometerHalf className="me-2" /> Temperature: {weather.current?.temperature}°C
+                      <FaThermometerHalf className="me-2" /> Temperature:{" "}
+                      {weather.current?.temperature}°C
                     </p>
                     <p>
-                      <FaWind className="me-2" /> Wind: {weather.current?.wind_speed} km/h
+                      <FaWind className="me-2" /> Wind:{" "}
+                      {weather.current?.wind_speed} km/h
                     </p>
                     <p>
-                      <FaTint className="me-2" /> Rain: {weather.current?.rain} mm
+                      <FaTint className="me-2" /> Rain: {weather.current?.rain}{" "}
+                      mm
                     </p>
                     <small className="text-muted text-end d-block">
                       Click to expand ↓
@@ -277,7 +319,8 @@ const SupplierDashboard = () => {
                 <ol className="mb-0">
                   {topPopular.map(([name, count], idx) => (
                     <li key={idx} className="mb-1">
-                      <span className="fw-bold">{name}</span> — Contacted {count} time(s)
+                      <span className="fw-bold">{name}</span> — Contacted{" "}
+                      {count} time(s)
                     </li>
                   ))}
                 </ol>
@@ -297,7 +340,10 @@ const SupplierDashboard = () => {
                 <ul className="mb-0">
                   {lowStock.map((item, i) => (
                     <li key={i} className="mb-2">
-                      {item.pesticide} - <span className="text-danger fw-bold">{item.stock} units left</span>
+                      {item.pesticide} -{" "}
+                      <span className="text-danger fw-bold">
+                        {item.stock} units left
+                      </span>
                     </li>
                   ))}
                 </ul>

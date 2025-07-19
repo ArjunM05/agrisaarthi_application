@@ -1,6 +1,5 @@
 // src/pages/PesticidesPage.tsx
 
-import React from "react";
 import HomeHeader from "../Components/HomeHeader";
 import HomeFooter from "../Components/HomeFooter";
 import Pesticides from "../Components/Pesticides";

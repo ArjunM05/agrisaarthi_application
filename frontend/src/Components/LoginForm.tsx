@@ -31,13 +31,6 @@ const LoginForm = () => {
 
   const navigate = useNavigate();
 
-  // Handle Enter key for login
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleLogin();
-    }
-  };
-
   const showToast = (
     title: string,
     description: string,
@@ -47,7 +40,8 @@ const LoginForm = () => {
     setToastShow(true);
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!email || !password) {
       showToast(
         "Missing Fields",
@@ -67,47 +61,30 @@ const LoginForm = () => {
       return;
     }
     setIsLoading(true);
-
     try {
-      // Call Flask backend API
       const response = await fetch("http://localhost:5001/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await response.json();
-
-      if (response.ok) {
-        // Store user type in localStorage
-        localStorage.setItem("user_type", data.role);
-        localStorage.setItem("user_email", email);
-        localStorage.setItem("user_id", data.user_id);
-        localStorage.setItem("user_name", data.name);
-        localStorage.setItem("user_district", data.district);
-        localStorage.setItem("user_phone", data.phone);
-
-        showToast("Login Successful", data.message);
-
-        // Navigate based on user type
-        if (data.role === "farmer") {
-          navigate("/farmer");
-        } else if (data.role === "supplier") {
-          navigate("/supplier");
-        } else {
-          showToast("Unknown User Type", data.message, "danger");
-        }
+      if (response.ok && data.status === "success") {
+        showToast("Login Successful", data.message || "Welcome back!");
+        // You may want to redirect based on user role here if needed
+        navigate("/");
       } else {
         showToast(
           "Login Failed",
-          data.error || "Invalid credentials",
+          data.message || "Invalid credentials",
           "danger"
         );
       }
-    } catch (error) {
-      showToast("Connection Error", "Unable to connect to server", "danger");
+    } catch (error: any) {
+      showToast(
+        "Login Failed",
+        error.message || "Invalid credentials",
+        "danger"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -248,61 +225,60 @@ const LoginForm = () => {
           <div className="text-center mb-4">
             <h2 className="h3 fw-bold text-dark mb-0">LOGIN</h2>
           </div>
+          <form onSubmit={handleLogin}>
+            <div className="mb-3">
+              <label
+                htmlFor="email"
+                className="form-label text-uppercase fw-medium text-muted small"
+              >
+                EMAIL
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="form-control form-control-lg"
+                // autoComplete="username"
+              />
+            </div>
 
-          <div className="mb-3">
-            <label
-              htmlFor="email"
-              className="form-label text-uppercase fw-medium text-muted small"
-            >
-              EMAIL
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="form-control form-control-lg"
-              onKeyDown={handleKeyDown}
-              // autoComplete="username"
-            />
-          </div>
+            <div className="mb-4 position-relative">
+              <label
+                htmlFor="password"
+                className="form-label text-uppercase fw-medium text-muted small"
+              >
+                PASSWORD
+              </label>
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className="form-control form-control-lg"
+                // autoComplete="current-password"
+              />
+              <span
+                className="position-absolute top-50 end-0 me-3"
+                style={{ cursor: "pointer" }}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
+            </div>
 
-          <div className="mb-4 position-relative">
-            <label
-              htmlFor="password"
-              className="form-label text-uppercase fw-medium text-muted small"
-            >
-              PASSWORD
-            </label>
-            <input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="form-control form-control-lg"
-              onKeyDown={handleKeyDown}
-              // autoComplete="current-password"
-            />
-            <span
-              className="position-absolute top-50 end-0 me-3"
-              style={{ cursor: "pointer" }}
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </span>
-          </div>
-
-          <div className="col-10">
-            <button
-              onClick={handleLogin}
-              disabled={isLoading}
-              className="btn btn-success btn-md w-100 rounded-pill fw-medium mb-2"
-            >
-              {isLoading ? "Logging in..." : "LOGIN"}
-            </button>
-          </div>
+            <div className="col-10">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn btn-success btn-md w-100 rounded-pill fw-medium mb-2"
+              >
+                {isLoading ? "Logging in..." : "LOGIN"}
+              </button>
+            </div>
+          </form>
 
           {/* <div className="row justify-content-md-center"> */}
           <div className="row">
@@ -324,7 +300,6 @@ const LoginForm = () => {
                 FORGOT PASSWORD
               </button>
             </div>
-           
           </div>
         </div>
       </div>
