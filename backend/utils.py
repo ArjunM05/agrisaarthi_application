@@ -336,7 +336,7 @@ def log_sms_interaction(user_phone: str, query_type: str, message: str, response
         print(f"Error logging SMS interaction: {e}")
         return False
 
-def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence: float):
+def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence: float, pesticide: str = "Not specified"):
     """
     Logs the results of a pest detection inference.
 
@@ -345,11 +345,10 @@ def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence:
         image_url (str): The URL or path to the image used for inference.
         pest_name (str): The name of the detected pest.
         confidence (float): The confidence score of the detection (0.0 to 1.0).
-        dosage (int): The dosage of pesticide to be administered.
-        xai_path (str, optional): URL or path to the Explainable AI visualization. Defaults to None.
+        pesticide (str): The recommended pesticide for the detected pest.
     """
     if not user_id or not image_url or not pest_name or confidence is None:
-        print("Error: User ID, image URL, pest name, dosage, and confidence are required.")
+        print("Error: User ID, image URL, pest name, and confidence are required.")
         return False
     if not (0.0 <= confidence <= 1.0):
         print("Error: Confidence must be a float between 0.0 and 1.0.")
@@ -361,7 +360,7 @@ def log_pest_detection(user_id: str, image_url: str, pest_name: str, confidence:
             'image_url': image_url,
             'pest_name': pest_name,
             'confidence': confidence,
-          
+            'pesticide': pesticide
         }
        
         result = db.table('pest_inference_results').insert(data).execute()

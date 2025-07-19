@@ -138,7 +138,7 @@ const ChatBot = () => {
 
   return (
     <div
-      className="position-fixed p-3"
+      className="position-fixed d-flex flex-column align-items-center"
       style={{ zIndex: 1000, bottom: "20px", right: "20px", pointerEvents: "auto" }}
     >
       <div
@@ -157,6 +157,18 @@ const ChatBot = () => {
         <svg viewBox="0 0 24 24" fill="currentColor" className="text-white" style={{ width: "24px", height: "24px" }}>
           <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
         </svg>
+      </div>
+      <div 
+        className="text-center mt-2 text-success fw-bold"
+        style={{ 
+          fontSize: "12px", 
+          whiteSpace: "nowrap",
+          textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+          cursor: "pointer"
+        }}
+        onClick={toggleChat}
+      >
+        Chat with Agribot
       </div>
     </div>
   );

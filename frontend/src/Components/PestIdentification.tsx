@@ -195,17 +195,31 @@ const PestIdentification: React.FC = () => {
         setPesticideNames(pesticideNamesMap);
 
         // Log detection and pesticides directly to Supabase (frontend only)
+        // const user_id = localStorage.getItem("user_id") || "";
+        // const pesticideString = pesticides.join(", ");
+        // await supabase.from("pest_inference_results").insert([
+        //   {
+        //     user_id: user_id,
+        //     pest_name: topDetection.class_name,
+        //     image_url: imageUrl,
+        //     pesticide: pesticideString,
+        //     confidence: topDetection.confidence,
+        //   },
+        // ]);
+        // Log pest detection using backend route
         const user_id = localStorage.getItem("user_id") || "";
-        const pesticideString = pesticides.join(", ");
-        await supabase.from("pest_inference_results").insert([
-          {
-            user_id: user_id,
-            pest_name: topDetection.class_name,
+        const pesticideString = pesticides.length > 0 ? pesticides.join(", ") : "Not specified";
+        await fetch("http://localhost:5001/pest_detection/log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id,
             image_url: imageUrl,
-            pesticide: pesticideString,
+            pest_name: topDetection.class_name,
             confidence: topDetection.confidence,
-          },
-        ]);
+            pesticide: pesticideString,
+          }),
+        });
 
         // Fetch suppliers for the recommended pesticides
         let suppliersData: Supplier[] = [];

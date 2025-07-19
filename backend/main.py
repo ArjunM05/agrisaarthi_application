@@ -8,9 +8,8 @@ from utils import (
     submit_feedback, log_sms_interaction, log_pest_detection, update_weather_data, get_schemes_by_location,
     get_user_name, get_last_4_pest_images, get_pest_history, get_last_contacted_suppliers,
     get_supplier_inventory, update_inventory, get_user_info, delete_account, get_supplier_details, call_supplier, update_password,
-    forgot_password, verify_otp_and_reset_password, upload_image,
-    get_contacts_for_supplier
-)
+    forgot_password, verify_otp_and_reset_password, upload_image, get_contacts_for_supplier
+    )
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import os
@@ -166,9 +165,10 @@ def pest_detection_log_route():
     image_url = data.get('image_url')
     pest_name = data.get('pest_name')
     confidence = data.get('confidence')
+    pesticide = data.get('pesticide')
     
 
-    if log_pest_detection(user_id, image_url, pest_name, confidence):
+    if log_pest_detection(user_id, image_url, pest_name, confidence, pesticide):
         return jsonify({"message": "Pest detection logged"}), 201
     else:
         return jsonify({"error": "Failed to log pest detection"}), 400
