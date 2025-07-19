@@ -11,7 +11,7 @@ const LandingPage: React.FC = () => {
   };
 
   const handleLearnMore = () => {
-    navigate("/contact");
+    navigate("/learn-more");
   };
 
   const [showInstallPopup, setShowInstallPopup] = useState(false);
