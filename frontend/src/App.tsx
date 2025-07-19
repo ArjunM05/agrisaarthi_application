@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useState, useEffect } from "react";
 import LoginPage from "./pages/LoginPage";
 
 // import FarmerRegistrationPage from "./pages/FarmerRegistrationPage";
@@ -6,7 +7,8 @@ import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 import ContactUsPage from "./pages/ContactUsPage";
-// import LandingPage from "./pages/LandingPage";
+import LandingPage from "./pages/LandingPage";
+import LearnMorePage from "./pages/LearnMorePage";
 import FarmerLayout from "./layouts/FarmerLayout";
 import SupplierLayout from "./layouts/SupplierLayout";
 import PestIdentificationPage from "./pages/PestIdentificationPage";
@@ -24,16 +26,39 @@ import PestHistoryPage from "./pages/PestHistoryPage";
 import { AuthProvider } from "./utils/AuthProvider";
 
 const App = () => {
-  const userType = localStorage.getItem("user_type");
+  const [userType, setUserType] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Set initial userType
+    setUserType(localStorage.getItem("user_type"));
+
+    // Listen for storage changes
+    const handleStorageChange = () => {
+      setUserType(localStorage.getItem("user_type"));
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also listen for custom events if you dispatch them on login/logout
+    window.addEventListener("userTypeChanged", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("userTypeChanged", handleStorageChange);
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registration" element={<RegistrationPage />} />
           <Route path="/contact" element={<ContactUsPage />} />
+          <Route path="/learn-more" element={<LearnMorePage />} />
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <RequireAuth>
                 <RoleRedirect />

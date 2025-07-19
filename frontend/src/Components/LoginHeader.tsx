@@ -2,7 +2,10 @@ import logo from "../assets/logo-1.png";
 
 const LoginHeader = () => {
   return (
-    <header className="w-100 bg-white shadow-sticky-top">
+    <header
+      className="w-100 bg-white shadow-sm sticky-top"
+      style={{ zIndex: 1030 }}
+    >
       <div className="container-fluid">
         <div className="row align-items-center py-3 px-4">
           <div className="col">

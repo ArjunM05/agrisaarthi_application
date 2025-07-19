@@ -98,7 +98,7 @@ const SupplierHistoryPage = () => {
     <div
       className="min-vh-100 d-flex flex-column"
       style={{
-        background: "linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 100%)",
+        background: "linear-gradient(135deg, #f6f2ed 0%, #e8f5e8 100%)",
       }}
     >
       <HomeHeader />

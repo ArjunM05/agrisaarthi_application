@@ -74,7 +74,7 @@ const SupplierRegistration = () => {
         "Welcome to AgriSaarthi! Your supplier account has been created."
       );
     }, 1500);
-    navigate("/");
+    navigate("/dashboard");
   };
 
   const handleBack = () => {

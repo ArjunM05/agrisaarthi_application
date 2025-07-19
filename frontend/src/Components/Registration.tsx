@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Toast, ToastContainer } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import supabase from "../utils/supabase";
 
 const districts = [
   "Ariyalur",
