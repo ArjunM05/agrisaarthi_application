@@ -21,31 +21,65 @@ import ProfilePage from "./pages/ProfileSectionPage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 import RequireAuth from "./Components/RequireAuth";
 import PestHistoryPage from "./pages/PestHistoryPage";
+import { AuthProvider } from "./utils/AuthProvider";
 
 const App = () => {
   const userType = localStorage.getItem("user_type");
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/registration" element={<RegistrationPage />} />
-        <Route path="/contact" element={<ContactUsPage />} />
-        <Route path="/" element={<RequireAuth><RoleRedirect /></RequireAuth>} />
-        <Route path={`/${userType}/profile`} element={<RequireAuth><ProfilePage /></RequireAuth>} />
-        <Route path="/farmer" element={<RequireAuth><FarmerLayout /></RequireAuth>}>
-          <Route index element={<FarmerDashboardPage />} />
-          <Route path="pest-identification" element={<PestIdentificationPage />} />
-          <Route path="pesticide" element={<PesticidesPage />} />
-          <Route path="supplier-history" element={<SupplierHistoryPage />} />
-          <Route path="pest-history" element={<PestHistoryPage />} />
-        </Route>
-        <Route path="/supplier" element={<RequireAuth><SupplierLayout /></RequireAuth>}>
-          <Route index element={<SupplierDashboardPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/registration" element={<RegistrationPage />} />
+          <Route path="/contact" element={<ContactUsPage />} />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <RoleRedirect />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path={`/${userType}/profile`}
+            element={
+              <RequireAuth>
+                <ProfilePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/farmer"
+            element={
+              <RequireAuth>
+                <FarmerLayout />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<FarmerDashboardPage />} />
+            <Route
+              path="pest-identification"
+              element={<PestIdentificationPage />}
+            />
+            <Route path="pesticide" element={<PesticidesPage />} />
+            <Route path="supplier-history" element={<SupplierHistoryPage />} />
+            <Route path="pest-history" element={<PestHistoryPage />} />
+          </Route>
+          <Route
+            path="/supplier"
+            element={
+              <RequireAuth>
+                <SupplierLayout />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<SupplierDashboardPage />} />
+            <Route path="inventory" element={<InventoryPage />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 

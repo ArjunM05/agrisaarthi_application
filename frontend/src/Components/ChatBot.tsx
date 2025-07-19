@@ -70,7 +70,7 @@ const ChatBot = () => {
             setIsOpen(false);
             const container = document.getElementById(`webchat-${sessionId}`);
             if (container) {
-              container.style.display = "none";
+              (container as HTMLElement).style.display = "none";
               container.classList.remove("show");
             }
           });
@@ -123,14 +123,14 @@ const ChatBot = () => {
         setIsOpen(false);
         if (container) {
           container.classList.remove("show");
-          container.style.display = "none";
+          (container as HTMLElement).style.display = "none";
         }
       } else {
         window.botpress.open();
         setIsOpen(true);
         if (container) {
+          (container as HTMLElement).style.display = "block";
           container.classList.add("show");
-          container.style.display = "block";
         }
       }
     }
@@ -138,12 +138,22 @@ const ChatBot = () => {
 
   return (
     <div
-      className="position-fixed d-flex flex-column align-items-center"
-      style={{ zIndex: 1000, bottom: "20px", right: "20px", pointerEvents: "auto" }}
+      className="position-fixed p-3"
+      style={{
+        zIndex: 1000,
+        bottom: "20px",
+        right: "20px",
+        pointerEvents: "auto",
+      }}
     >
       <div
         className="bg-success rounded-circle d-flex align-items-center justify-content-center shadow"
-        style={{ width: "60px", height: "60px", cursor: "pointer", transition: "all 0.3s ease" }}
+        style={{
+          width: "60px",
+          height: "60px",
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+        }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = "scale(1.1)";
           e.currentTarget.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.2)";
@@ -154,7 +164,12 @@ const ChatBot = () => {
         }}
         onClick={toggleChat}
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" className="text-white" style={{ width: "24px", height: "24px" }}>
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="text-white"
+          style={{ width: "24px", height: "24px" }}
+        >
           <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
         </svg>
       </div>

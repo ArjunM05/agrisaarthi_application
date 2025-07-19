@@ -1,6 +1,5 @@
 // src/pages/PestIdentificationPage.tsx
 
-import React from "react";
 import HomeHeader from "../Components/HomeHeader";
 import HomeFooter from "../Components/HomeFooter";
 import PestIdentification from "../Components/PestIdentification";

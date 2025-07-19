@@ -30,33 +30,34 @@ configuration.api_key['key'] = WEATHER_API_KEY
 
 def register_user(name: str, email: str, phone: str, password: str, user_type: str, location: str):
     """
-    Registers a new user in the system.
-
-    Args:
-        name (str): The user's name.
-        email (str): The user's email (must be unique).
-        phone (str): The user's phone number (must be unique).
-        password (str): The password for the account.
-        user_type (str): The type of user (e.g., 'farmer', 'supplier', 'admin').
-        location (str): The user's initial location string.
+    Registers a new user using Supabase Auth admin API and stores user data in users table.
     """
     if not email or not password or not user_type:
         print("Error: Email, password, and user type are required for registration.")
         return {"status": "error", "code": 1, "message": "Email, password, and user type are required for registration"}
 
-    existing_email = db.table('users').select('id').eq('email', email).execute()
-    if existing_email.data:
-        print(f"Error: User with email '{email}' already exists.")
-        return {"status": "error", "code": 2, "message": "User with this email already exists"}
-    
-    existing_phone = db.table('users').select('id').eq('phone', phone).execute()
-    if existing_phone.data:
-        print(f"Error: User with phone '{phone}' already exists.")
-        return {"status": "error", "code": 3, "message": "User with this phone number already exists"}
+    # Check for existing email or phone in users table
+    existing = db.table('users').select('id').or_(f"email.eq.{email},phone.eq.{phone}").execute()
+    if existing.data:
+        print(f"Error: User with email '{email}' or phone '{phone}' already exists.")
+        return {"status": "error", "code": 2, "message": "User with this email or phone already exists"}
 
     try:
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        # Create user in Supabase Auth (admin)
+        auth_resp = db.auth.admin.create_user({
+            "email": email,
+            "password": password,
+            "email_confirm": True
+        })
+        if not hasattr(auth_resp, 'user') or not auth_resp.user:
+            print(f"Error: Failed to create user in Supabase Auth.")
+            return {"status": "error", "code": 3, "message": "Failed to create user in Auth."}
+        user_id = auth_resp.user.id
+
+        # Insert into users table (store hashed password)
         result = db.table('users').insert({
+            'id': user_id,
             'name': name,
             'email': email,
             'phone': phone,

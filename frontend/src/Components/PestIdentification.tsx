@@ -3,11 +3,6 @@ import axios from "axios";
 import supabase from "../utils/supabase";
 import ChatBot from "./ChatBot";
 
-interface Pesticide {
-  pest: string;
-  pesticide: string;
-}
-
 interface Supplier {
   supplier_id: number;
   supplier_name: string;
@@ -133,115 +128,110 @@ const PestIdentification: React.FC = () => {
     }
   };
 
+  const handleUpload = async () => {
+    if (!image) return alert("Please select an image.");
+    setLoading(true);
+    setDetections([]);
+    setSuppliers([]);
+    setImageError("");
 
-    const handleUpload = async () => {
-      if (!image) return alert("Please select an image.");
-      setLoading(true);
-      setDetections([]);
-      setSuppliers([]);
-      setImageError("");
-  
-      try {
-        // Predict pests from image
-        const formData = new FormData();
-        formData.append("file", image);
-        const response = await axios.post("/predict", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Accept: "application/json",
-          },
-        });
+    try {
+      // Predict pests from image
+      const formData = new FormData();
+      formData.append("file", image);
+      const response = await axios.post("/predict", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Accept: "application/json",
+        },
+      });
 
-        const result = response.data.detections;
-        if (!result || result.length === 0) {
-          setDetections([]);
-          setImageError("No pests detected.");
-          setLoading(false);
-          setLoadingSuppliers(false);
-          return;
-        }
-
-        // Find the pest with the highest confidence
-        const topDetection = result.reduce((max: any, det: any) =>
-          det.confidence > max.confidence ? det : max
-        );
-        setDetections([topDetection]);
-
-        // Upload image ONCE to Supabase
-        const fileExt = image.name.split('.').pop();
-        const fileName = `pest_${topDetection.class_name}_${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("pest-images")
-          .upload(filePath, image);
-        if (uploadError) {
-          console.error("Supabase upload error:", uploadError);
-          setImageError("Image upload failed.");
-          setLoading(false);
-          setLoadingSuppliers(false);
-          return;
-        }
-        const { data: publicUrlData } = supabase.storage
-          .from("pest-images")
-          .getPublicUrl(filePath);
-        const imageUrl = publicUrlData.publicUrl;
-
-        // Fetch pesticides for the top pest
-        setLoadingSuppliers(true);
-        const pesticides = await fetchPesticidesForPest(topDetection.class_name);
-        const pesticideNamesMap: { [pestName: string]: string[] } = {
-          [topDetection.class_name]: pesticides,
-        };
-        setPesticideNames(pesticideNamesMap);
-
-        // Log detection and pesticides directly to Supabase (frontend only)
-        // const user_id = localStorage.getItem("user_id") || "";
-        // const pesticideString = pesticides.join(", ");
-        // await supabase.from("pest_inference_results").insert([
-        //   {
-        //     user_id: user_id,
-        //     pest_name: topDetection.class_name,
-        //     image_url: imageUrl,
-        //     pesticide: pesticideString,
-        //     confidence: topDetection.confidence,
-        //   },
-        // ]);
-        // Log pest detection using backend route
-        const user_id = localStorage.getItem("user_id") || "";
-        const pesticideString = pesticides.length > 0 ? pesticides.join(", ") : "Not specified";
-        await fetch("http://localhost:5001/pest_detection/log", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id,
-            image_url: imageUrl,
-            pest_name: topDetection.class_name,
-            confidence: topDetection.confidence,
-            pesticide: pesticideString,
-          }),
-        });
-
-        // Fetch suppliers for the recommended pesticides
-        let suppliersData: Supplier[] = [];
-        if (pesticides.length > 0) {
-          suppliersData = await fetchSuppliersForPesticides(pesticides);
-        }
-        setSuppliers(suppliersData);
-      } catch (error) {
-        console.error("Prediction failed:", error);
-        setImageError("Error while processing image.");
-      } finally {
+      const result = response.data.detections;
+      if (!result || result.length === 0) {
+        setDetections([]);
+        setImageError("No pests detected.");
         setLoading(false);
         setLoadingSuppliers(false);
+        return;
       }
-    };
+
+      // Find the pest with the highest confidence
+      const topDetection = result.reduce((max: any, det: any) =>
+        det.confidence > max.confidence ? det : max
+      );
+      setDetections([topDetection]);
+
+      // Upload image ONCE to Supabase
+      const fileExt = image.name.split(".").pop();
+      const fileName = `pest_${
+        topDetection.class_name
+      }_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("pest-images")
+        .upload(filePath, image);
+      if (uploadError) {
+        console.error("Supabase upload error:", uploadError);
+        setImageError("Image upload failed.");
+        setLoading(false);
+        setLoadingSuppliers(false);
+        return;
+      }
+      const { data: publicUrlData } = supabase.storage
+        .from("pest-images")
+        .getPublicUrl(filePath);
+      const imageUrl = publicUrlData.publicUrl;
+
+      // Fetch pesticides for the top pest
+      setLoadingSuppliers(true);
+      const pesticides = await fetchPesticidesForPest(topDetection.class_name);
+      const pesticideNamesMap: { [pestName: string]: string[] } = {
+        [topDetection.class_name]: pesticides,
+      };
+      setPesticideNames(pesticideNamesMap);
+
+      // Log detection and pesticides directly to Supabase (frontend only)
+      const user_id = localStorage.getItem("user_id") || "";
+      const pesticideString = pesticides.join(", ");
+      await supabase.from("pest_inference_results").insert([
+        {
+          user_id: user_id,
+          pest_name: topDetection.class_name,
+          image_url: imageUrl,
+          pesticide: pesticideString,
+          confidence: topDetection.confidence,
+        },
+      ]);
+
+      // Fetch suppliers for the recommended pesticides
+      let suppliersData: Supplier[] = [];
+      if (pesticides.length > 0) {
+        suppliersData = await fetchSuppliersForPesticides(pesticides);
+      }
+      setSuppliers(suppliersData);
+    } catch (error) {
+      console.error("Prediction failed:", error);
+      setImageError("Error while processing image.");
+    } finally {
+      setLoading(false);
+      setLoadingSuppliers(false);
+    }
+  };
 
   return (
     <div className="container my-4">
       {imageError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+        <div
+          className="alert alert-danger alert-dismissible fade show"
+          role="alert"
+        >
           {imageError}
-          <button type="button" className="btn-close" aria-label="Close" onClick={() => setImageError("")}></button>
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => setImageError("")}
+          ></button>
         </div>
       )}
       <h3 className="mb-3">Upload Pest Image</h3>

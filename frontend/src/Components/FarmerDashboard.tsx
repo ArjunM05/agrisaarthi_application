@@ -6,20 +6,17 @@ import {
   FaThermometerHalf,
   FaWind,
   FaTint,
-  FaPhone,
   FaCompass,
   FaSun,
-  FaWater,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import ChatBot from "./ChatBot";
 
-import pest1 from "../assets/pest1.jpg";
-import pest2 from "../assets/pest2.jpg";
-import pest3 from "../assets/pest3.jpg";
-import pest4 from "../assets/pest4.jpg";
-
-import { getLatLonFromDistrict, getWeatherData, getAirQuality } from "../utils/weather";
+import {
+  getLatLonFromDistrict,
+  getWeatherData,
+  getAirQuality,
+} from "../utils/weather";
 
 type FarmerDetails = {
   farm_size?: number;
@@ -49,7 +46,6 @@ const FarmerDashboard = () => {
   const [selectedSuppliers, setSelectedSuppliers] = useState<any[]>([]);
 
   useEffect(() => {
-    let didAskLocation = false;
     async function fetchWeather() {
       let lat: number | undefined, lon: number | undefined;
       // Try geolocation
@@ -59,13 +55,14 @@ const FarmerDashboard = () => {
             (pos) => {
               lat = pos.coords.latitude;
               lon = pos.coords.longitude;
-              didAskLocation = true;
               resolve();
             },
             async () => {
               // If denied, fallback to district geocoding
               try {
-                const coords = await getLatLonFromDistrict(user_district || "Chennai");
+                const coords = await getLatLonFromDistrict(
+                  user_district || "Chennai"
+                );
                 lat = coords.lat;
                 lon = coords.lon;
                 resolve();
@@ -78,13 +75,13 @@ const FarmerDashboard = () => {
       } catch {
         // fallback: Delhi
         lat = 28.6139;
-        lon = 77.2090;
+        lon = 77.209;
       }
 
       // Ensure lat/lon are defined
       if (typeof lat !== "number" || typeof lon !== "number") {
         lat = 28.6139;
-        lon = 77.2090;
+        lon = 77.209;
       }
 
       // Fetch weather and air quality
@@ -286,8 +283,12 @@ const FarmerDashboard = () => {
   const handlePestImageClick = (pestItem: any) => {
     setSelectedPest(pestItem);
     // Find all suppliers matching any pesticide in pestItem.pesticide (comma separated)
-    const pesticides = (pestItem.pesticide || "").split(",").map((p: string) => p.trim());
-    const matchingSuppliers = suppliers.filter((s) => pesticides.includes(s.pesticide));
+    const pesticides = (pestItem.pesticide || "")
+      .split(",")
+      .map((p: string) => p.trim());
+    const matchingSuppliers = suppliers.filter((s) =>
+      pesticides.includes(s.pesticide)
+    );
     setSelectedSuppliers(matchingSuppliers);
     setShowPestModal(true);
   };
@@ -329,24 +330,30 @@ const FarmerDashboard = () => {
                     <div className="row">
                       <div className="col-md-6">
                         <p>
-                          <FaThermometerHalf className="me-2" /> Temperature: {weather.current?.temperature}°C
+                          <FaThermometerHalf className="me-2" /> Temperature:{" "}
+                          {weather.current?.temperature}°C
                         </p>
                         <p>
-                          <FaWind className="me-2" /> Wind: {weather.current?.wind_speed} km/h
+                          <FaWind className="me-2" /> Wind:{" "}
+                          {weather.current?.wind_speed} km/h
                         </p>
                         <p>
-                          <FaTint className="me-2" /> Rain: {weather.current?.rain} mm
+                          <FaTint className="me-2" /> Rain:{" "}
+                          {weather.current?.rain} mm
                         </p>
                       </div>
                       <div className="col-md-6">
                         <p>
-                          <FaCompass className="me-2" /> Wind Direction: {weather.current?.wind_direction}°
+                          <FaCompass className="me-2" /> Wind Direction:{" "}
+                          {weather.current?.wind_direction}°
                         </p>
                         <p>
-                          <FaSun className="me-2" /> UV Index: {weather.current?.solar_irradiance}
+                          <FaSun className="me-2" /> UV Index:{" "}
+                          {weather.current?.solar_irradiance}
                         </p>
                         <p>
-                          <FaTint className="me-2" /> Humidity: {weather.current?.humidity}%
+                          <FaTint className="me-2" /> Humidity:{" "}
+                          {weather.current?.humidity}%
                         </p>
                       </div>
                     </div>
@@ -356,12 +363,34 @@ const FarmerDashboard = () => {
                         {weather.forecast?.map((day: any, i: number) => (
                           <div className="col-md-4" key={i}>
                             <div className="border rounded p-2 text-center shadow-sm">
-                              <div style={{ color: 'white', background: '#007e33', borderRadius: '4px', padding: '4px 0', marginBottom: 8 }}>
-                                <strong>{(() => { const d = new Date(day.date); return d.toLocaleDateString('en-GB'); })()}</strong>
+                              <div
+                                style={{
+                                  color: "white",
+                                  background: "#007e33",
+                                  borderRadius: "4px",
+                                  padding: "4px 0",
+                                  marginBottom: 8,
+                                }}
+                              >
+                                <strong>
+                                  {(() => {
+                                    const d = new Date(day.date);
+                                    return d.toLocaleDateString("en-GB");
+                                  })()}
+                                </strong>
                               </div>
-                              <p><FaThermometerHalf className="me-2" />Temperature: {day.temperature_max}°C</p>
-                              <p><FaTint className="me-2" />Rain: {day.rain || 0} mm</p>
-                              <p><FaWind className="me-2" />Wind: {day.wind_speed} km/h</p>
+                              <p>
+                                <FaThermometerHalf className="me-2" />
+                                Temperature: {day.temperature_max}°C
+                              </p>
+                              <p>
+                                <FaTint className="me-2" />
+                                Rain: {day.rain || 0} mm
+                              </p>
+                              <p>
+                                <FaWind className="me-2" />
+                                Wind: {day.wind_speed} km/h
+                              </p>
                             </div>
                           </div>
                         ))}
@@ -417,13 +446,16 @@ const FarmerDashboard = () => {
                 {weather ? (
                   <Card.Body>
                     <p>
-                      <FaThermometerHalf className="me-2" /> Temperature: {weather.current?.temperature}°C
+                      <FaThermometerHalf className="me-2" /> Temperature:{" "}
+                      {weather.current?.temperature}°C
                     </p>
                     <p>
-                      <FaWind className="me-2" /> Wind: {weather.current?.wind_speed} km/h
+                      <FaWind className="me-2" /> Wind:{" "}
+                      {weather.current?.wind_speed} km/h
                     </p>
                     <p>
-                      <FaTint className="me-2" /> Rain: {weather.current?.rain} mm
+                      <FaTint className="me-2" /> Rain: {weather.current?.rain}{" "}
+                      mm
                     </p>
                     <small className="text-muted text-end d-block">
                       Click to expand ↓
@@ -464,7 +496,14 @@ const FarmerDashboard = () => {
           <Card className="p-3 shadow-sm h-100 d-flex flex-column">
             <Card.Title className="d-flex justify-content-between align-items-center">
               <span>Recent Pest Identifications</span>
-              <a href="#" className="text-decoration-none small" onClick={(e) => { e.preventDefault(); handleViewPestHistory(); }}>
+              <a
+                href="#"
+                className="text-decoration-none small"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleViewPestHistory();
+                }}
+              >
                 View history →
               </a>
             </Card.Title>
@@ -473,7 +512,10 @@ const FarmerDashboard = () => {
                 let imagesToShow = [];
                 if (pestHistory.length >= 4) {
                   imagesToShow = pestHistory.slice(0, 4);
-                } else if (pestHistory.length === 3 || pestHistory.length === 2) {
+                } else if (
+                  pestHistory.length === 3 ||
+                  pestHistory.length === 2
+                ) {
                   imagesToShow = pestHistory.slice(0, 2);
                 } else if (pestHistory.length === 1) {
                   imagesToShow = pestHistory.slice(0, 1);
@@ -482,22 +524,43 @@ const FarmerDashboard = () => {
                   // Single image, fill card
                   const item = imagesToShow[0];
                   return (
-                    <div className="w-100 h-100 d-flex align-items-center justify-content-center" style={{ minHeight: "180px", height: "100%" }}>
+                    <div
+                      className="w-100 h-100 d-flex align-items-center justify-content-center"
+                      style={{ minHeight: "180px", height: "100%" }}
+                    >
                       <div
                         className="position-relative w-100 h-100 border rounded shadow-sm"
-                        style={{ cursor: "pointer", overflow: "hidden", height: "180px", maxWidth: "100%" }}
+                        style={{
+                          cursor: "pointer",
+                          overflow: "hidden",
+                          height: "180px",
+                          maxWidth: "100%",
+                        }}
                         onClick={() => handlePestImageClick(item)}
                       >
                         <img
                           src={item.img_url}
                           alt={`Pest 1`}
-                          style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
+                          style={{
+                            width: "100%",
+                            maxHeight: "180px",
+                            objectFit: "cover",
+                            borderRadius: "6px",
+                            background: "#f8f9fa",
+                          }}
                         />
                         <div
                           className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
-                          style={{ fontSize: "1em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                          style={{
+                            fontSize: "1em",
+                            borderBottomLeftRadius: "6px",
+                            borderBottomRightRadius: "6px",
+                            textTransform: "capitalize",
+                          }}
                         >
-                          {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                          {item.pest_name &&
+                            item.pest_name.charAt(0).toUpperCase() +
+                              item.pest_name.slice(1)}
                         </div>
                       </div>
                     </div>
@@ -505,24 +568,45 @@ const FarmerDashboard = () => {
                 } else if (imagesToShow.length === 2) {
                   // Two images, split vertically
                   return (
-                    <div className="d-flex flex-column h-100" style={{ minHeight: "180px" }}>
+                    <div
+                      className="d-flex flex-column h-100"
+                      style={{ minHeight: "180px" }}
+                    >
                       {imagesToShow.map((item, i) => (
                         <div
                           key={i}
                           className="flex-fill position-relative border rounded shadow-sm mb-2"
-                          style={{ cursor: "pointer", overflow: "hidden", height: "85px", maxWidth: "100%" }}
+                          style={{
+                            cursor: "pointer",
+                            overflow: "hidden",
+                            height: "85px",
+                            maxWidth: "100%",
+                          }}
                           onClick={() => handlePestImageClick(item)}
                         >
                           <img
                             src={item.img_url}
                             alt={`Pest ${i + 1}`}
-                            style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
+                            style={{
+                              width: "100%",
+                              maxHeight: "180px",
+                              objectFit: "cover",
+                              borderRadius: "6px",
+                              background: "#f8f9fa",
+                            }}
                           />
                           <div
                             className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
-                            style={{ fontSize: "0.95em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                            style={{
+                              fontSize: "0.95em",
+                              borderBottomLeftRadius: "6px",
+                              borderBottomRightRadius: "6px",
+                              textTransform: "capitalize",
+                            }}
                           >
-                            {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                            {item.pest_name &&
+                              item.pest_name.charAt(0).toUpperCase() +
+                                item.pest_name.slice(1)}
                           </div>
                         </div>
                       ))}
@@ -531,52 +615,99 @@ const FarmerDashboard = () => {
                 } else if (imagesToShow.length === 4) {
                   // 2x2 grid
                   return (
-                    <div className="d-flex flex-column h-100 w-100" style={{ minHeight: "180px", height: "100%" }}>
-                      <div className="d-flex flex-row flex-fill w-100" style={{ height: "50%" }}>
+                    <div
+                      className="d-flex flex-column h-100 w-100"
+                      style={{ minHeight: "180px", height: "100%" }}
+                    >
+                      <div
+                        className="d-flex flex-row flex-fill w-100"
+                        style={{ height: "50%" }}
+                      >
                         {[0, 1].map((col) => {
                           const item = imagesToShow[col];
                           return (
                             <div
                               key={col}
                               className="flex-fill position-relative border rounded shadow-sm mx-1 mb-4"
-                              style={{ cursor: "pointer", overflow: "hidden", width: "50%", height: "100%" }}
+                              style={{
+                                cursor: "pointer",
+                                overflow: "hidden",
+                                width: "50%",
+                                height: "100%",
+                              }}
                               onClick={() => handlePestImageClick(item)}
                             >
                               <img
                                 src={item.img_url}
                                 alt={`Pest ${col + 1}`}
-                                style={{ width: "100%", height: "100%", maxHeight: "90px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  maxHeight: "90px",
+                                  objectFit: "cover",
+                                  borderRadius: "6px",
+                                  background: "#f8f9fa",
+                                }}
                               />
                               <div
                                 className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
-                                style={{ fontSize: "0.95em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                                style={{
+                                  fontSize: "0.95em",
+                                  borderBottomLeftRadius: "6px",
+                                  borderBottomRightRadius: "6px",
+                                  textTransform: "capitalize",
+                                }}
                               >
-                                {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                                {item.pest_name &&
+                                  item.pest_name.charAt(0).toUpperCase() +
+                                    item.pest_name.slice(1)}
                               </div>
                             </div>
                           );
                         })}
                       </div>
-                      <div className="d-flex flex-row flex-fill w-100" style={{ height: "50%" }}>
+                      <div
+                        className="d-flex flex-row flex-fill w-100"
+                        style={{ height: "50%" }}
+                      >
                         {[2, 3].map((col) => {
                           const item = imagesToShow[col];
                           return (
                             <div
                               key={col}
                               className="flex-fill position-relative border rounded shadow-sm mx-1"
-                              style={{ cursor: "pointer", overflow: "hidden", width: "50%", height: "100%" }}
+                              style={{
+                                cursor: "pointer",
+                                overflow: "hidden",
+                                width: "50%",
+                                height: "100%",
+                              }}
                               onClick={() => handlePestImageClick(item)}
                             >
                               <img
                                 src={item.img_url}
                                 alt={`Pest ${col + 1}`}
-                                style={{ width: "100%", height: "100%", maxHeight: "90px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  maxHeight: "90px",
+                                  objectFit: "cover",
+                                  borderRadius: "6px",
+                                  background: "#f8f9fa",
+                                }}
                               />
                               <div
                                 className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
-                                style={{ fontSize: "0.95em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                                style={{
+                                  fontSize: "0.95em",
+                                  borderBottomLeftRadius: "6px",
+                                  borderBottomRightRadius: "6px",
+                                  textTransform: "capitalize",
+                                }}
                               >
-                                {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                                {item.pest_name &&
+                                  item.pest_name.charAt(0).toUpperCase() +
+                                    item.pest_name.slice(1)}
                               </div>
                             </div>
                           );
@@ -592,26 +723,48 @@ const FarmerDashboard = () => {
                         <div
                           key={i}
                           className="position-relative border rounded shadow-sm mx-1"
-                          style={{ cursor: "pointer", overflow: "hidden", height: "100px", maxWidth: "100%" }}
+                          style={{
+                            cursor: "pointer",
+                            overflow: "hidden",
+                            height: "100px",
+                            maxWidth: "100%",
+                          }}
                           onClick={() => handlePestImageClick(item)}
                         >
                           <img
                             src={item.img_url}
                             alt={`Pest ${i + 1}`}
-                            style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "6px", background: "#f8f9fa" }}
+                            style={{
+                              width: "100%",
+                              maxHeight: "180px",
+                              objectFit: "cover",
+                              borderRadius: "6px",
+                              background: "#f8f9fa",
+                            }}
                           />
                           <div
                             className="position-absolute bottom-0 start-0 w-100 text-white bg-dark bg-opacity-50 px-2 py-1 text-center"
-                            style={{ fontSize: "0.95em", borderBottomLeftRadius: "6px", borderBottomRightRadius: "6px", textTransform: "capitalize" }}
+                            style={{
+                              fontSize: "0.95em",
+                              borderBottomLeftRadius: "6px",
+                              borderBottomRightRadius: "6px",
+                              textTransform: "capitalize",
+                            }}
                           >
-                            {item.pest_name && item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1)}
+                            {item.pest_name &&
+                              item.pest_name.charAt(0).toUpperCase() +
+                                item.pest_name.slice(1)}
                           </div>
                         </div>
                       ))}
                     </div>
                   );
                 } else {
-                  return <div className="text-muted">No recent pest images found.</div>;
+                  return (
+                    <div className="text-muted">
+                      No recent pest images found.
+                    </div>
+                  );
                 }
               })()}
             </Card.Body>
@@ -715,7 +868,10 @@ const FarmerDashboard = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="btn btn-secondary" onClick={() => setShowModal(false)}>
+          <Button
+            variant="btn btn-secondary"
+            onClick={() => setShowModal(false)}
+          >
             Close
           </Button>
           <Button
@@ -743,28 +899,50 @@ const FarmerDashboard = () => {
         <Modal.Body>
           {selectedPest && (
             <>
-              <h4 className="mb-3">Pest: {selectedPest.pest_name && selectedPest.pest_name.charAt(0).toUpperCase() + selectedPest.pest_name.slice(1)}</h4>
-              <h5 className="mb-4">Pesticide(s): {selectedPest.pesticide || "-"}</h5>
-              <p className="mb-3"><b>Suppliers Contacted for these Pesticides:</b></p>
+              <h4 className="mb-3">
+                Pest:{" "}
+                {selectedPest.pest_name &&
+                  selectedPest.pest_name.charAt(0).toUpperCase() +
+                    selectedPest.pest_name.slice(1)}
+              </h4>
+              <h5 className="mb-4">
+                Pesticide(s): {selectedPest.pesticide || "-"}
+              </h5>
+              <p className="mb-3">
+                <b>Suppliers Contacted for these Pesticides:</b>
+              </p>
               {selectedSuppliers.length > 0 ? (
                 selectedSuppliers.map((supplier, idx) => (
                   <div className="card p-3 mb-3" key={idx}>
-                    <h6 className="mb-2"><strong>{supplier.pesticide}</strong></h6>
+                    <h6 className="mb-2">
+                      <strong>{supplier.pesticide}</strong>
+                    </h6>
                     <p>
-                      <strong>Shop Name:</strong> {supplier.shop_name}<br />
-                      <strong>Supplier Name:</strong> {supplier.supplier_name}<br />
-                      <strong>Contacted On:</strong> {supplier.contact_time?.slice(0, 10)}
+                      <strong>Shop Name:</strong> {supplier.shop_name}
+                      <br />
+                      <strong>Supplier Name:</strong> {supplier.supplier_name}
+                      <br />
+                      <strong>Contacted On:</strong>{" "}
+                      {supplier.contact_time?.slice(0, 10)}
                     </p>
                     <button
                       className="btn btn-outline-success fw-medium"
-                      onClick={() => handleCallSupplier(supplier.supplier_id, supplier.pesticide)}
+                      onClick={() =>
+                        handleCallSupplier(
+                          supplier.supplier_id,
+                          supplier.pesticide
+                        )
+                      }
                     >
                       📞 Call Supplier
                     </button>
                   </div>
                 ))
               ) : (
-                <p>You have not contacted any suppliers related to these pesticides.</p>
+                <p>
+                  You have not contacted any suppliers related to these
+                  pesticides.
+                </p>
               )}
             </>
           )}

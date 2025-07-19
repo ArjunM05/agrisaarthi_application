@@ -72,8 +72,14 @@ const ProfileSection: React.FC = () => {
     variant: "success",
   });
   // Alert states for cards
-  const [basicInfoAlert, setBasicInfoAlert] = useState<{message: string, variant: "success" | "danger" | "warning" | "info"} | null>(null);
-  const [additionalInfoAlert, setAdditionalInfoAlert] = useState<{message: string, variant: "success" | "danger" | "warning" | "info"} | null>(null);
+  const [basicInfoAlert, setBasicInfoAlert] = useState<{
+    message: string;
+    variant: "success" | "danger" | "warning" | "info";
+  } | null>(null);
+  const [additionalInfoAlert, setAdditionalInfoAlert] = useState<{
+    message: string;
+    variant: "success" | "danger" | "warning" | "info";
+  } | null>(null);
   const [pestHistory, setPestHistory] = useState<any[]>([]);
 
   // Auto-dismiss alerts after 1.5 seconds
@@ -106,12 +112,16 @@ const ProfileSection: React.FC = () => {
   };
 
   // Type guards
-  const isFarmerDetails = (info: AdditionalInfo): info is FarmerDetails => {
-    return userRole === "farmer";
+  const isFarmerDetails = (
+    details: AdditionalInfo
+  ): details is FarmerDetails => {
+    return (details as FarmerDetails).farm_size !== undefined;
   };
 
-  const isSupplierDetails = (info: AdditionalInfo): info is SupplierDetails => {
-    return userRole === "supplier";
+  const isSupplierDetails = (
+    details: AdditionalInfo
+  ): details is SupplierDetails => {
+    return (details as SupplierDetails).shop_name !== undefined;
   };
 
   // Fetch user data from localStorage and backend
@@ -176,9 +186,16 @@ const ProfileSection: React.FC = () => {
           }
 
           // Fetch pest history for farmers
-          if (userRole === "farmer" && userId && userId !== "undefined" && userId !== "null") {
+          if (
+            userRole === "farmer" &&
+            userId &&
+            userId !== "undefined" &&
+            userId !== "null"
+          ) {
             try {
-              const pestResponse = await fetch(`http://localhost:5001/pest_history/${userId}`);
+              const pestResponse = await fetch(
+                `http://localhost:5001/pest_history/${userId}`
+              );
               if (pestResponse.ok) {
                 const pestData = await pestResponse.json();
                 if (pestData.history && pestData.history.length > 0) {
@@ -204,7 +221,10 @@ const ProfileSection: React.FC = () => {
   useEffect(() => {
     if (additionalInfo) {
       const hasEmpty = Object.values(additionalInfo).some(
-        (v) => v === null || v === undefined  || (typeof v === "string" && v.trim() === "")
+        (v) =>
+          v === null ||
+          v === undefined ||
+          (typeof v === "string" && v.trim() === "")
       );
       setShowAlert(hasEmpty);
     }
@@ -228,7 +248,6 @@ const ProfileSection: React.FC = () => {
       !passwordData.confirmPassword
     ) {
       showToast("Error", "Please fill in all password fields", "danger");
-      
 
       return;
     }
@@ -254,7 +273,11 @@ const ProfileSection: React.FC = () => {
 
       const data = await response.json();
       if (response.ok && data.status === "success") {
-        showToast("Success", "Password updated successfully! You will be logged out.", "success");
+        showToast(
+          "Success",
+          "Password updated successfully! You will be logged out.",
+          "success"
+        );
         setShowPasswordModal(false);
         setPasswordData({
           oldPassword: "",
@@ -272,11 +295,19 @@ const ProfileSection: React.FC = () => {
           navigate("/login");
         }, 2000);
       } else {
-        showToast("Error", data.message || "Failed to update password", "danger");
+        showToast(
+          "Error",
+          data.message || "Failed to update password",
+          "danger"
+        );
       }
     } catch (error) {
       console.error("Error updating password:", error);
-      showToast("Error", "Failed to update password. Please try again.", "danger");
+      showToast(
+        "Error",
+        "Failed to update password. Please try again.",
+        "danger"
+      );
     } finally {
       setPasswordLoading(false);
     }
@@ -304,11 +335,19 @@ const ProfileSection: React.FC = () => {
         navigate("/login");
       } else {
         const errorData = await response.json();
-        setAdditionalInfoAlert({ message: `Failed to delete account: ${errorData.error || "Unknown error"}`, variant: "danger" });
+        setAdditionalInfoAlert({
+          message: `Failed to delete account: ${
+            errorData.error || "Unknown error"
+          }`,
+          variant: "danger",
+        });
       }
     } catch (error) {
       console.error("Error deleting account:", error);
-      setAdditionalInfoAlert({ message: "Failed to delete account. Please try again.", variant: "danger" });
+      setAdditionalInfoAlert({
+        message: "Failed to delete account. Please try again.",
+        variant: "danger",
+      });
     } finally {
       setDeleteLoading(false);
       setShowDeleteModal(false);
@@ -352,7 +391,10 @@ const ProfileSection: React.FC = () => {
 
         const data = await response.json();
         if (response.ok && data.message === "No changes made") {
-          setBasicInfoAlert({ message: "No changes were made to your details.", variant: "info" });
+          setBasicInfoAlert({
+            message: "No changes were made to your details.",
+            variant: "info",
+          });
         } else if (response.ok) {
           // Update localStorage
           localStorage.setItem("user_name", editUser?.name || "");
@@ -361,9 +403,15 @@ const ProfileSection: React.FC = () => {
 
           setUser(editUser);
           setEditMode({ ...editMode, basic: false });
-          setBasicInfoAlert({ message: "Basic info updated successfully!", variant: "success" });
+          setBasicInfoAlert({
+            message: "Basic info updated successfully!",
+            variant: "success",
+          });
         } else {
-          setBasicInfoAlert({ message: "Failed to update basic info", variant: "danger" });
+          setBasicInfoAlert({
+            message: "Failed to update basic info",
+            variant: "danger",
+          });
         }
       } else {
         // Update additional info based on user type
@@ -387,13 +435,22 @@ const ProfileSection: React.FC = () => {
 
           const data = await response.json();
           if (response.ok && data.message === "No changes made") {
-            setAdditionalInfoAlert({ message: "No changes were made to your details.", variant: "info" });
+            setAdditionalInfoAlert({
+              message: "No changes were made to your details.",
+              variant: "info",
+            });
           } else if (response.ok) {
             setAdditionalInfo(editAdditional);
             setEditMode({ ...editMode, additional: false });
-            setAdditionalInfoAlert({ message: "Farmer details updated successfully!", variant: "success" });
+            setAdditionalInfoAlert({
+              message: "Farmer details updated successfully!",
+              variant: "success",
+            });
           } else {
-            setAdditionalInfoAlert({ message: "Failed to update farmer details", variant: "danger" });
+            setAdditionalInfoAlert({
+              message: "Failed to update farmer details",
+              variant: "danger",
+            });
           }
         } else if (userRole === "supplier") {
           const supplierDetails = editAdditional as SupplierDetails;
@@ -416,22 +473,37 @@ const ProfileSection: React.FC = () => {
 
           const data = await response.json();
           if (response.ok && data.message === "No changes made") {
-            setAdditionalInfoAlert({ message: "No changes were made to your details.", variant: "info" });
+            setAdditionalInfoAlert({
+              message: "No changes were made to your details.",
+              variant: "info",
+            });
           } else if (response.ok) {
             setAdditionalInfo(editAdditional);
             setEditMode({ ...editMode, additional: false });
-            setAdditionalInfoAlert({ message: "Supplier details updated successfully!", variant: "success" });
+            setAdditionalInfoAlert({
+              message: "Supplier details updated successfully!",
+              variant: "success",
+            });
           } else {
-            setAdditionalInfoAlert({ message: "Failed to update supplier details", variant: "danger" });
+            setAdditionalInfoAlert({
+              message: "Failed to update supplier details",
+              variant: "danger",
+            });
           }
         }
       }
     } catch (error) {
       console.error("Error saving data:", error);
       if (section === "basic") {
-        setBasicInfoAlert({ message: "Failed to save changes", variant: "danger" });
+        setBasicInfoAlert({
+          message: "Failed to save changes",
+          variant: "danger",
+        });
       } else {
-        setAdditionalInfoAlert({ message: "Failed to save changes", variant: "danger" });
+        setAdditionalInfoAlert({
+          message: "Failed to save changes",
+          variant: "danger",
+        });
       }
     } finally {
       setSaveLoading(false);
@@ -498,16 +570,28 @@ const ProfileSection: React.FC = () => {
 
   // Add a helper to format the date difference for pest history
   const formatPestDate = (dateString: string) => {
-    if (!dateString) return '';
+    if (!dateString) return "";
     const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    if (dateOnly.getTime() === todayOnly.getTime()) return 'Today';
-    if (dateOnly.getTime() === yesterdayOnly.getTime()) return 'Yesterday';
+    const dateOnly = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const yesterdayOnly = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate()
+    );
+    if (dateOnly.getTime() === todayOnly.getTime()) return "Today";
+    if (dateOnly.getTime() === yesterdayOnly.getTime()) return "Yesterday";
     const diffTime = Math.abs(todayOnly.getTime() - dateOnly.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return `${diffDays} days ago`;
@@ -599,7 +683,12 @@ const ProfileSection: React.FC = () => {
             )}
           </Card.Header>
           {basicInfoAlert && (
-            <Alert variant={basicInfoAlert.variant} onClose={() => setBasicInfoAlert(null)} dismissible className="mb-0">
+            <Alert
+              variant={basicInfoAlert.variant}
+              onClose={() => setBasicInfoAlert(null)}
+              dismissible
+              className="mb-0"
+            >
               {basicInfoAlert.message}
             </Alert>
           )}
@@ -722,7 +811,12 @@ const ProfileSection: React.FC = () => {
             )}
           </Card.Header>
           {additionalInfoAlert && (
-            <Alert variant={additionalInfoAlert.variant} onClose={() => setAdditionalInfoAlert(null)} dismissible className="mb-0">
+            <Alert
+              variant={additionalInfoAlert.variant}
+              onClose={() => setAdditionalInfoAlert(null)}
+              dismissible
+              className="mb-0"
+            >
               {additionalInfoAlert.message}
             </Alert>
           )}
@@ -795,7 +889,6 @@ const ProfileSection: React.FC = () => {
                         onChange={handleAdditionalChange}
                       />
                     </div>
-                    
                   </>
                 ) : userRole === "supplier" ? (
                   <>
@@ -881,12 +974,10 @@ const ProfileSection: React.FC = () => {
                         }
                         onChange={handleAdditionalChange}
                       >
-                        
                         <option value="Yes">Yes</option>
                         <option value="No">No</option>
                       </select>
                     </div>
-                    
                   </>
                 ) : null}
                 <div className="d-flex gap-2 mt-2">
@@ -986,7 +1077,6 @@ const ProfileSection: React.FC = () => {
                         <span className="text-muted">Please enter details</span>
                       )}
                     </p>
-                    
                   </>
                 ) : null}
               </>
@@ -1001,16 +1091,33 @@ const ProfileSection: React.FC = () => {
               <Card className="mb-3 flex-fill">
                 <Card.Header className="fw-bold d-flex justify-content-between align-items-center">
                   <span className="fs-5">Pest History</span>
-                  <a href="#" className="text-decoration-none small" onClick={e => { e.preventDefault(); handleViewPestHistory(); }}>
+                  <a
+                    href="#"
+                    className="text-decoration-none small"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleViewPestHistory();
+                    }}
+                  >
                     View full history &rarr;
                   </a>
                 </Card.Header>
                 <Card.Body>
                   {pestHistory.length > 0 ? (
                     pestHistory.map((item, index) => (
-                      <div key={index} className="d-flex justify-content-between mb-2">
-                        <span>{item.pest_name ? item.pest_name.charAt(0).toUpperCase() + item.pest_name.slice(1) : ''}</span>
-                        <span className="text-muted">{formatPestDate(item.prediction_time)}</span>
+                      <div
+                        key={index}
+                        className="d-flex justify-content-between mb-2"
+                      >
+                        <span>
+                          {item.pest_name
+                            ? item.pest_name.charAt(0).toUpperCase() +
+                              item.pest_name.slice(1)
+                            : ""}
+                        </span>
+                        <span className="text-muted">
+                          {formatPestDate(item.prediction_time)}
+                        </span>
                       </div>
                     ))
                   ) : (
@@ -1181,7 +1288,6 @@ const ProfileSection: React.FC = () => {
             <Button
               variant="secondary"
               onClick={() => setShowPasswordModal(false)}
-            
             >
               Cancel
             </Button>
@@ -1195,11 +1301,7 @@ const ProfileSection: React.FC = () => {
           </Modal.Footer>
 
           {/* ToastContainer INSIDE the modal */}
-          <ToastContainer
-            position="top-center"
-            className="p-3"
-            
-          >
+          <ToastContainer position="top-center" className="p-3">
             <Toast
               show={toast.show}
               onClose={() => setToast((t) => ({ ...t, show: false }))}
@@ -1207,7 +1309,9 @@ const ProfileSection: React.FC = () => {
               autohide
               bg={toast.variant}
             >
-              <Toast.Body className={toast.variant === "danger" ? "text-white" : ""}>
+              <Toast.Body
+                className={toast.variant === "danger" ? "text-white" : ""}
+              >
                 {toast.message}
               </Toast.Body>
             </Toast>

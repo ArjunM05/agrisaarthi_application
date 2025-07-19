@@ -1,8 +1,10 @@
-export const OPENWEATHER_API_KEY = "62a3d479cc0c6ecf6fb1df5f40e22242";
+export const OPENWEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 
 export async function getLatLonFromDistrict(district: string) {
   // Still use OpenWeather geocoding for lat/lon
-  const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(district)}&limit=1&appid=62a3d479cc0c6ecf6fb1df5f40e22242`;
+  const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
+    district
+  )}&limit=1&appid=${OPENWEATHER_API_KEY}`;
   const res = await fetch(url);
   const data = await res.json();
   if (data && data.length > 0) {
@@ -39,12 +41,22 @@ export async function getWeatherData(lat: number, lon: number) {
       solar_irradiance: hourly.uv_index ? hourly.uv_index[nowHourIdx] : null,
     },
     forecast: [0, 1, 2].map((i) => ({
-      date: data.daily.time ? data.daily.time[i] : '',
-      temperature_max: data.daily.temperature_2m_max ? data.daily.temperature_2m_max[i] : null,
-      temperature_min: data.daily.temperature_2m_min ? data.daily.temperature_2m_min[i] : null,
-      rain: data.daily.precipitation_sum ? data.daily.precipitation_sum[i] : null,
-      wind_speed: data.daily.wind_speed_10m_max ? data.daily.wind_speed_10m_max[i] : null,
-      solar_irradiance: data.daily.uv_index_max ? data.daily.uv_index_max[i] : null,
+      date: data.daily.time ? data.daily.time[i] : "",
+      temperature_max: data.daily.temperature_2m_max
+        ? data.daily.temperature_2m_max[i]
+        : null,
+      temperature_min: data.daily.temperature_2m_min
+        ? data.daily.temperature_2m_min[i]
+        : null,
+      rain: data.daily.precipitation_sum
+        ? data.daily.precipitation_sum[i]
+        : null,
+      wind_speed: data.daily.wind_speed_10m_max
+        ? data.daily.wind_speed_10m_max[i]
+        : null,
+      solar_irradiance: data.daily.uv_index_max
+        ? data.daily.uv_index_max[i]
+        : null,
     })),
   };
 }
@@ -65,4 +77,4 @@ export async function getAirQuality(lat: number, lon: number) {
     sulphur_dioxide: data.hourly?.sulphur_dioxide?.[0],
     uv_index: data.hourly?.uv_index?.[0],
   };
-} 
+}

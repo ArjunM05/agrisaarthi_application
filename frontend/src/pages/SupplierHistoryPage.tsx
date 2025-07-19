@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Card, Modal, Button, Container, Row, Col } from "react-bootstrap";
-import { FaPhone } from "react-icons/fa";
 import HomeHeader from "../Components/HomeHeader";
 import HomeFooter from "../Components/HomeFooter";
 
@@ -140,10 +139,13 @@ const SupplierHistoryPage = () => {
                         </Card.Text>
                         <Button
                           variant="outline-success"
-                          className = "fw-medium btn-sm"
+                          className="fw-medium btn-sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCallSupplier(supplier.supplier_id, supplier.pesticide);
+                            handleCallSupplier(
+                              supplier.supplier_id,
+                              supplier.pesticide
+                            );
                           }}
                         >
                           📞 Call Supplier
@@ -203,7 +205,11 @@ const SupplierHistoryPage = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" className="fw-medium btn-md" onClick={() => setShowModal(false)}>
+          <Button
+            variant="secondary"
+            className="fw-medium btn-md"
+            onClick={() => setShowModal(false)}
+          >
             Close
           </Button>
           <Button
@@ -211,7 +217,10 @@ const SupplierHistoryPage = () => {
             className="fw-medium btn-md"
             onClick={() => {
               if (selectedSupplier) {
-                handleCallSupplier(selectedSupplier.supplier_id, selectedSupplier.pesticide);
+                handleCallSupplier(
+                  selectedSupplier.supplier_id,
+                  selectedSupplier.pesticide
+                );
               }
               setShowModal(false);
             }}
