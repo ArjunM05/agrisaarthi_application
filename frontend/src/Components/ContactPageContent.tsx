@@ -74,11 +74,31 @@ const ContactPageContent: React.FC = () => {
   };
 
   const team = [
-    { name: "Sushmetha S R", email: "sush7niaa@gmail.com" },
-    { name: "Abhinav Chaitanya R", email: "abhinavchaitanya6@gmail.com" },
-    { name: "Arjun M", email: "arjunm.0510@gmail.com" },
-    { name: "Kiranchandran H", email: "kiranchandranh@gmail.com" },
-    { name: "Harshavardhan S", email: "harsak7@gmail.com" },
+    {
+      name: "Sushmetha S R",
+      email: "sush7niaa@gmail.com",
+      linkedin: "https://www.linkedin.com/in/sushmetha-sr/",
+    },
+    {
+      name: "Abhinav Chaitanya R",
+      email: "abhinavchaitanya6@gmail.com",
+      linkedin: "https://www.linkedin.com/in/abhinav-chaitanya-r-799397286/",
+    },
+    {
+      name: "Arjun M",
+      email: "arjunm.0510@gmail.com",
+      linkedin: "www.linkedin.com/in/arjun-m-803677250",
+    },
+    {
+      name: "Kiranchandran H",
+      email: "kiranchandranh@gmail.com",
+      linkedin: "https://www.linkedin.com/in/kiranchandran-h-b701aa251/",
+    },
+    {
+      name: "Harshavardhan S",
+      email: "harsak7@gmail.com",
+      linkedin: "https://www.linkedin.com/in/harshavardhan-s-b14220221/",
+    },
   ];
 
   return (
@@ -100,7 +120,6 @@ const ContactPageContent: React.FC = () => {
                   onClick={() => setRating(rating === star ? 0 : star)}
                 >
                   ★
-                  
                 </span>
               ))}
             </div>
@@ -109,19 +128,34 @@ const ContactPageContent: React.FC = () => {
               placeholder="Any comments? (optional)"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              
               rows={4}
             ></textarea>
             {feedbackSuccess && (
-              <div className="alert alert-success alert-dismissible fade show" role="alert">
+              <div
+                className="alert alert-success alert-dismissible fade show"
+                role="alert"
+              >
                 {feedbackSuccess}
-                <button type="button" className="btn-close" aria-label="Close" onClick={() => setFeedbackSuccess("")}></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Close"
+                  onClick={() => setFeedbackSuccess("")}
+                ></button>
               </div>
             )}
             {feedbackError && (
-              <div className="alert alert-danger alert-dismissible fade show" role="alert">
+              <div
+                className="alert alert-danger alert-dismissible fade show"
+                role="alert"
+              >
                 {feedbackError}
-                <button type="button" className="btn-close" aria-label="Close" onClick={() => setFeedbackError("")}></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Close"
+                  onClick={() => setFeedbackError("")}
+                ></button>
               </div>
             )}
             <div className="d-flex justify-content-center">
@@ -154,29 +188,43 @@ const ContactPageContent: React.FC = () => {
               rows={4}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              
             ></textarea>
             {contactSuccess && (
-              <div className="alert alert-success alert-dismissible fade show" role="alert">
+              <div
+                className="alert alert-success alert-dismissible fade show"
+                role="alert"
+              >
                 {contactSuccess}
-                <button type="button" className="btn-close" aria-label="Close" onClick={() => setContactSuccess("")}></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Close"
+                  onClick={() => setContactSuccess("")}
+                ></button>
               </div>
             )}
             {contactError && (
-              <div className="alert alert-danger alert-dismissible fade show" role="alert">
+              <div
+                className="alert alert-danger alert-dismissible fade show"
+                role="alert"
+              >
                 {contactError}
-                <button type="button" className="btn-close" aria-label="Close" onClick={() => setContactError("")}></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Close"
+                  onClick={() => setContactError("")}
+                ></button>
               </div>
             )}
             <div className="d-flex justify-content-center">
-            <button
-              className="btn btn-outline-success w-100"
-              style={{ maxWidth: 220 }}
-              onClick={handleContactSubmit}
-              
-            >
-              Send Message
-            </button>
+              <button
+                className="btn btn-success w-100"
+                style={{ maxWidth: 220 }}
+                onClick={handleContactSubmit}
+              >
+                Send Message
+              </button>
             </div>
           </div>
         </div>
@@ -186,14 +234,35 @@ const ContactPageContent: React.FC = () => {
           <div className="card shadow-sm p-4">
             <h4 className="mb-4">Meet the Team</h4>
             <div className="row mb-3">
-              <div className="col-md-6 offset-md-3 text-center border p-3 rounded">
+              <div
+                className="col-md-6 offset-md-3 text-center border p-3 rounded"
+                style={{ cursor: "pointer" }}
+                onClick={() => window.open(team[0].linkedin, "_blank")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
+              >
                 <h5>{team[0].name}</h5>
                 <p className="mb-0">{team[0].email}</p>
               </div>
             </div>
             <div className="row mb-3">
               {team.slice(1, 3).map((member, idx) => (
-                <div className="col-md-6 text-center border p-3 rounded" key={idx}>
+                <div
+                  className="col-md-6 text-center border p-3 rounded"
+                  key={idx}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => window.open(member.linkedin, "_blank")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
+                >
                   <h5>{member.name}</h5>
                   <p className="mb-0">{member.email}</p>
                 </div>
@@ -201,7 +270,18 @@ const ContactPageContent: React.FC = () => {
             </div>
             <div className="row">
               {team.slice(3).map((member, idx) => (
-                <div className="col-md-6 text-center border p-3 rounded" key={idx}>
+                <div
+                  className="col-md-6 text-center border p-3 rounded"
+                  key={idx}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => window.open(member.linkedin, "_blank")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
+                >
                   <h5>{member.name}</h5>
                   <p className="mb-0">{member.email}</p>
                 </div>

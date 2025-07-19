@@ -84,8 +84,20 @@ const LoginForm = () => {
         localStorage.setItem("isLoggedIn", "true");
         
         showToast("Login Successful", data.message || "Welcome back!");
-        // You may want to redirect based on user role here if needed
-        navigate("/");
+
+        // Store user data in localStorage
+        localStorage.setItem("user_id", data.user_id);
+        localStorage.setItem("user_name", data.name);
+        localStorage.setItem("user_email", data.email);
+        localStorage.setItem("user_type", data.role);
+        localStorage.setItem("user_district", data.district);
+        localStorage.setItem("user_phone", data.phone);
+
+        // Dispatch custom event to notify App component
+        window.dispatchEvent(new Event("userTypeChanged"));
+
+        // Navigate to dashboard
+        navigate("/dashboard");
       } else {
         showToast(
           "Login Failed",

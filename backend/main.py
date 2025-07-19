@@ -19,7 +19,10 @@ import os
 CORS(app, resources={r"/*": {"origins": "*"}}, allow_headers="*", supports_credentials=True)
 #---------------------------------Route functions--------------------------------------------------------------------------
 
-
+@app.route("/")
+def home():
+    return "AgroSaarthi Flask Backend is Live"
+    
 @app.route('/register', methods=['POST'])
 def register_route():
     data = request.get_json()
