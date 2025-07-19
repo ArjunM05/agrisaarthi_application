@@ -79,21 +79,24 @@ const Pesticides: React.FC = () => {
   const fetchSuppliersForPesticide = async (pesticideName: string) => {
     setLoadingSuppliers(true);
     try {
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          pesticide_name: pesticideName,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            pesticide_name: pesticideName,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data.suppliers && data.suppliers.length > 0) {
         // Filter suppliers with stock > 0
         const availableSuppliers = data.suppliers.filter(
-          (supplier: any) => supplier.stock > 0
+          (supplier: { stock: number }) => supplier.stock > 0
         );
         setSuppliers(availableSuppliers);
       } else {
@@ -128,17 +131,20 @@ const Pesticides: React.FC = () => {
         return;
       }
 
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          supplier_id: supplierId,
-          farmer_id: user_id,
-          pesticide: pesticide,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            supplier_id: supplierId,
+            farmer_id: user_id,
+            pesticide: pesticide,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data.supplier_phone) {

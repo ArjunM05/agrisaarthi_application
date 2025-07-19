@@ -62,11 +62,14 @@ const LoginForm = () => {
     }
     setIsLoading(true);
     try {
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
       const data = await response.json();
       if (response.ok && data.status === "success") {
         // Store all user data in localStorage
@@ -76,13 +79,12 @@ const LoginForm = () => {
         localStorage.setItem("user_type", data.role);
         localStorage.setItem("user_district", data.district);
         localStorage.setItem("user_phone", data.phone);
-        
-        
+
         // Store additional info if available
-        
+
         // Store login status
         localStorage.setItem("isLoggedIn", "true");
-        
+
         showToast("Login Successful", data.message || "Welcome back!");
 
         // Store user data in localStorage
@@ -105,12 +107,8 @@ const LoginForm = () => {
           "danger"
         );
       }
-    } catch (error: any) {
-      showToast(
-        "Login Failed",
-        error.message || "Invalid credentials",
-        "danger"
-      );
+    } catch {
+      showToast("Login Failed", "Invalid credentials", "danger");
     } finally {
       setIsLoading(false);
     }
@@ -144,13 +142,16 @@ const LoginForm = () => {
 
     setForgotPasswordLoading(true);
     try {
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/forgot_password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: forgotPasswordEmail }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/forgot_password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: forgotPasswordEmail }),
+        }
+      );
 
       const data = await response.json();
 
@@ -164,7 +165,7 @@ const LoginForm = () => {
       } else {
         showToast("Error", data.message || "Failed to send OTP", "danger");
       }
-    } catch (error) {
+    } catch {
       showToast("Error", "Failed to send OTP. Please try again.", "danger");
     } finally {
       setForgotPasswordLoading(false);
@@ -184,17 +185,20 @@ const LoginForm = () => {
 
     setResetPasswordLoading(true);
     try {
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/reset_password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: forgotPasswordEmail,
-          otp: otp,
-          new_password: newPassword,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/reset_password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: forgotPasswordEmail,
+            otp: otp,
+            new_password: newPassword,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -221,7 +225,7 @@ const LoginForm = () => {
           "danger"
         );
       }
-    } catch (error) {
+    } catch {
       showToast(
         "Error",
         "Failed to reset password. Please try again.",

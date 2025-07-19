@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@botpress/webchat": "^3.0.0"
+    "@botpress/webchat": "^3.0.0",
+    "typescript": "^5.8.3"
   }
 }

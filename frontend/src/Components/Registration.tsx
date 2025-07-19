@@ -172,18 +172,21 @@ const Registration = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-          role: formData.role,
-          district: formData.district,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            password: formData.password,
+            role: formData.role,
+            district: formData.district,
+          }),
+        }
+      );
       const data = await response.json();
       if (response.ok) {
         showToast(
@@ -200,10 +203,10 @@ const Registration = () => {
           "danger"
         );
       }
-    } catch (error: any) {
+    } catch {
       showToast(
         "Connection Error",
-        error.message || "Unable to connect to server. Please try again later.",
+        "Unable to connect to server. Please try again later.",
         "danger"
       );
     } finally {

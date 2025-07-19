@@ -3,11 +3,35 @@ declare global {
   interface Window {
     botpress: {
       on: (event: string, callback: () => void) => void;
-      init: (config: any) => void;
+      init: (config: BotpressConfig) => void;
       open: () => void;
       close: () => void;
     };
   }
+}
+
+interface BotpressConfig {
+  botId: string;
+  clientId: string;
+  selector: string;
+  sessionId: string;
+  user: {
+    id: string;
+    name: string;
+  };
+  configuration: {
+    version: string;
+    color: string;
+    variant: string;
+    headerVariant: string;
+    themeMode: string;
+    fontFamily: string;
+    radius: number;
+    feedbackEnabled: boolean;
+    footer: string;
+    allowFileUpload: boolean;
+    botName: string;
+  };
 }
 
 import { useEffect, useState } from "react";
@@ -173,13 +197,13 @@ const ChatBot = () => {
           <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
         </svg>
       </div>
-      <div 
+      <div
         className="text-center mt-2 text-success fw-bold"
-        style={{ 
-          fontSize: "12px", 
+        style={{
+          fontSize: "12px",
           whiteSpace: "nowrap",
           textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
-          cursor: "pointer"
+          cursor: "pointer",
         }}
         onClick={toggleChat}
       >

@@ -5,17 +5,51 @@ import HomeFooter from "../Components/HomeFooter";
 
 const PestHistoryPage = () => {
   const user_id = localStorage.getItem("user_id");
-  const [pestHistory, setPestHistory] = useState<any[]>([]);
-  const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [selectedPest, setSelectedPest] = useState<any>(null);
-  const [selectedSuppliers, setSelectedSuppliers] = useState<any[]>([]);
+  const [pestHistory, setPestHistory] = useState<
+    Array<{
+      pest_name: string;
+      img_url: string;
+      pesticide: string;
+      confidence: number;
+      date: string;
+    }>
+  >([]);
+  const [suppliers, setSuppliers] = useState<
+    Array<{
+      supplier_id: number;
+      shop_name: string;
+      supplier_name: string;
+      pesticide: string;
+      contact_time: string;
+      supplier_phone: string;
+    }>
+  >([]);
+  const [selectedPest, setSelectedPest] = useState<{
+    pest_name: string;
+    img_url: string;
+    pesticide: string;
+    confidence: number;
+    date: string;
+  } | null>(null);
+  const [selectedSuppliers, setSelectedSuppliers] = useState<
+    Array<{
+      supplier_id: number;
+      shop_name: string;
+      supplier_name: string;
+      pesticide: string;
+      contact_time: string;
+      supplier_phone: string;
+    }>
+  >([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     if (user_id) {
-      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/pest_history/${user_id}`)
+      fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/pest_history/${user_id}`
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.history) {
@@ -25,7 +59,9 @@ const PestHistoryPage = () => {
         .catch((error) => {
           console.error("Error fetching pest history:", error);
         });
-      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${user_id}`)
+      fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${user_id}`
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.contacts && data.contacts.length > 0) {
@@ -41,7 +77,13 @@ const PestHistoryPage = () => {
     }
   }, [user_id]);
 
-  const handlePestClick = (pestItem: any) => {
+  const handlePestClick = (pestItem: {
+    pest_name: string;
+    img_url: string;
+    pesticide: string;
+    confidence: number;
+    date: string;
+  }) => {
     setSelectedPest(pestItem);
     // Find all suppliers matching any pesticide in pestItem.pesticide (comma separated)
     const pesticides = (pestItem.pesticide || "")
@@ -55,12 +97,7 @@ const PestHistoryPage = () => {
   };
 
   return (
-    <div
-      className="min-vh-100 d-flex flex-column"
-      style={{
-        background: "linear-gradient(135deg, #f6f2ed 0%, #e8f5e8 100%)",
-      }}
-    >
+    <div className="min-vh-100 d-flex flex-column">
       <HomeHeader />
       {loading ? (
         <div

@@ -53,7 +53,14 @@ const ProfileSection: React.FC = () => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [supplierHistory, setSupplierHistory] = useState<any[]>([]);
+  const [supplierHistory, setSupplierHistory] = useState<
+    Array<{
+      supplier_name: string;
+      shop_name: string;
+      pesticide: string;
+      contact_time: string;
+    }>
+  >([]);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
@@ -80,7 +87,15 @@ const ProfileSection: React.FC = () => {
     message: string;
     variant: "success" | "danger" | "warning" | "info";
   } | null>(null);
-  const [pestHistory, setPestHistory] = useState<any[]>([]);
+  const [pestHistory, setPestHistory] = useState<
+    Array<{
+      pest_name: string;
+      image_url: string;
+      confidence: number;
+      date: string;
+      prediction_time: string;
+    }>
+  >([]);
 
   // Auto-dismiss alerts after 1.5 seconds
   useEffect(() => {
@@ -259,17 +274,20 @@ const ProfileSection: React.FC = () => {
 
     setPasswordLoading(true);
     try {
-      const response = await fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/update_password`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          old_password: passwordData.oldPassword,
-          new_password: passwordData.newPassword,
-        }),
-      });
+      const response = await fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/update_password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            old_password: passwordData.oldPassword,
+            new_password: passwordData.newPassword,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (response.ok && data.status === "success") {
@@ -521,7 +539,7 @@ const ProfileSection: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
-    let parsedValue: any = value;
+    let parsedValue: string | number | boolean = value;
 
     if (type === "number") {
       parsedValue = parseFloat(value) || 0;

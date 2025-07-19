@@ -16,7 +16,12 @@ interface Supplier {
 const PestIdentification: React.FC = () => {
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [detections, setDetections] = useState<any[]>([]);
+  const [detections, setDetections] = useState<
+    Array<{
+      class_name: string;
+      confidence: number;
+    }>
+  >([]);
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
@@ -61,32 +66,44 @@ const PestIdentification: React.FC = () => {
 
     for (const pesticide of pesticides) {
       try {
-        const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            pesticide_name: pesticide,
-          }),
-        });
+        const response = await fetch(
+          "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              pesticide_name: pesticide,
+            }),
+          }
+        );
 
         const data = await response.json();
         if (data.suppliers && data.suppliers.length > 0) {
-          data.suppliers.forEach((supplier: any) => {
-            // Only add suppliers with stock > 0
-            if (supplier.stock > 0) {
-              suppliers.push({
-                supplier_id: supplier.supplier_id,
-                supplier_name: supplier.supplier_name,
-                shop_name: supplier.shop_name,
-                address: supplier.address,
-                price: supplier.price,
-                stock: supplier.stock,
-                pesticide: pesticide,
-              });
+          data.suppliers.forEach(
+            (supplier: {
+              supplier_id: number;
+              supplier_name: string;
+              shop_name: string;
+              address: string;
+              price: number;
+              stock: number;
+            }) => {
+              // Only add suppliers with stock > 0
+              if (supplier.stock > 0) {
+                suppliers.push({
+                  supplier_id: supplier.supplier_id,
+                  supplier_name: supplier.supplier_name,
+                  shop_name: supplier.shop_name,
+                  address: supplier.address,
+                  price: supplier.price,
+                  stock: supplier.stock,
+                  pesticide: pesticide,
+                });
+              }
             }
-          });
+          );
         }
       } catch (error) {
         console.error(`Error fetching suppliers for ${pesticide}:`, error);
@@ -104,17 +121,20 @@ const PestIdentification: React.FC = () => {
         return;
       }
 
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          supplier_id: supplierId,
-          farmer_id: user_id,
-          pesticide: pesticide,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            supplier_id: supplierId,
+            farmer_id: user_id,
+            pesticide: pesticide,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data.supplier_phone) {
@@ -156,8 +176,9 @@ const PestIdentification: React.FC = () => {
       }
 
       // Find the pest with the highest confidence
-      const topDetection = result.reduce((max: any, det: any) =>
-        det.confidence > max.confidence ? det : max
+      const topDetection = result.reduce(
+        (max: { confidence: number }, det: { confidence: number }) =>
+          det.confidence > max.confidence ? det : max
       );
       setDetections([topDetection]);
 

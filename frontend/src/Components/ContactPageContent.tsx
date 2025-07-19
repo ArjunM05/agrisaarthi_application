@@ -22,11 +22,14 @@ const ContactPageContent: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id, rating, comments: comment }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/feedback",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id, rating, comments: comment }),
+        }
+      );
       if (response.ok) {
         setFeedbackSuccess("Feedback submitted. Thank you!");
         setRating(0);
@@ -50,16 +53,19 @@ const ContactPageContent: React.FC = () => {
     const user_name = localStorage.getItem("user_name") || "Unknown User";
     const user_email = localStorage.getItem("user_email") || "Unknown Email";
     try {
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          message,
-          user_name,
-          user_email,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/contact",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            message,
+            user_name,
+            user_email,
+          }),
+        }
+      );
       const data = await response.json();
       if (response.ok) {
         setContactSuccess("Message submitted.");
@@ -68,7 +74,7 @@ const ContactPageContent: React.FC = () => {
       } else {
         setContactError(data.error || "Failed to send message.");
       }
-    } catch (error) {
+    } catch {
       setContactError("Failed to send message. Please try again.");
     }
   };

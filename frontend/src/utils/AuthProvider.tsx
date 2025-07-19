@@ -1,16 +1,64 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import supabase from "./supabase";
 
-const AuthContext = createContext<any>(null);
+interface LandDetails {
+  farmSize: string;
+  soilType: string;
+  irrigationType: string;
+  mainCrop: string;
+}
+
+interface PestData {
+  id: number;
+  name: string;
+  date: string;
+  image: { uri: string };
+  successful: boolean;
+}
+
+interface PesticideStats {
+  total: number;
+  ordered: number;
+  saved: number;
+  successRate: string;
+}
+
+interface UserData {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  district: string;
+  avatar_url: string;
+  email: string;
+  role: string;
+  hasOnboarded: boolean;
+  landDetails: LandDetails;
+  pests: PestData[];
+  pesticideStats: PesticideStats;
+}
+
+interface AuthContextType {
+  isAuthenticated: boolean;
+  user: UserData | null;
+  login: (credentials: { email: string; password: string }) => Promise<void>;
+  logout: () => Promise<void>;
+  updateUser: (updatedFields: Record<string, unknown>) => void;
+  fetchAndSetUser: (sessionUser: { id: string }) => Promise<void>;
+  markOnboardingComplete: () => Promise<void>;
+  loading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchAndSetUser = async (sessionUser: any) => {
+  const fetchAndSetUser = async (sessionUser: { id: string }) => {
     try {
       if (!sessionUser?.id) {
         console.warn("⚠️ fetchAndSetUser: Invalid sessionUser:", sessionUser);
@@ -159,8 +207,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsAuthenticated(false);
   };
 
-  const updateUser = (updatedFields: any) => {
-    setUser((prev: any) => ({ ...prev, ...updatedFields }));
+  const updateUser = (updatedFields: Record<string, unknown>) => {
+    setUser((prev: UserData | null) =>
+      prev ? { ...prev, ...updatedFields } : null
+    );
   };
 
   const markOnboardingComplete = async () => {

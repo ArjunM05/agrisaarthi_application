@@ -1,5 +1,5 @@
 // src/components/SupplierInventory.tsx
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   Modal,
   Button,
@@ -77,13 +77,7 @@ const SupplierInventory = () => {
   }, []);
 
   // Fetch existing inventory from backend
-  useEffect(() => {
-    if (userId && userId !== "undefined" && userId !== "null") {
-      fetchInventory();
-    }
-  }, [userId]);
-
-  const fetchInventory = async () => {
+  const fetchInventory = useCallback(async () => {
     setFetchingInventory(true);
     try {
       const response = await fetch(
@@ -93,12 +87,19 @@ const SupplierInventory = () => {
         const data = await response.json();
         if (data.inventory && Array.isArray(data.inventory)) {
           // Transform backend data to match frontend interface
-          const transformedInventory = data.inventory.map((item: any) => ({
-            pesticide: item.pesticide || "Unknown",
-            pest: item.pest || "Unknown",
-            price: item.price || 0,
-            stock: item.stock || 0,
-          }));
+          const transformedInventory = data.inventory.map(
+            (item: {
+              pesticide?: string;
+              pest?: string;
+              price?: number;
+              stock?: number;
+            }) => ({
+              pesticide: item.pesticide || "Unknown",
+              pest: item.pest || "Unknown",
+              price: item.price || 0,
+              stock: item.stock || 0,
+            })
+          );
           setInventory(transformedInventory);
         } else {
           setInventory([]);
@@ -113,7 +114,13 @@ const SupplierInventory = () => {
     } finally {
       setFetchingInventory(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId && userId !== "undefined" && userId !== "null") {
+      fetchInventory();
+    }
+  }, [userId, fetchInventory]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {

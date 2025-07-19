@@ -1,6 +1,11 @@
 import { useState } from "react";
 interface PestFormProps {
-  existingPest?: any;
+  existingPest?: {
+    id?: number;
+    name?: string;
+    description?: string;
+    cropsAffected?: string;
+  };
   updateCallback: () => void;
 }
 const PestForm = ({ existingPest = {}, updateCallback }: PestFormProps) => {

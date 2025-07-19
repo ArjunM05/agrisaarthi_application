@@ -48,7 +48,7 @@ const App = () => {
   }, []);
 
   return (
-    
+    <div className="app-wrapper" style={{ minHeight: "100vh" }}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -103,7 +103,7 @@ const App = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    
+    </div>
   );
 };
 

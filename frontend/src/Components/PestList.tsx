@@ -1,5 +1,10 @@
 interface PestListProps {
-  pests: any[];
+  pests: Array<{
+    id: number;
+    name: string;
+    description: string;
+    cropsAffected: string;
+  }>;
 }
 
 const PestList = ({ pests }: PestListProps) => {

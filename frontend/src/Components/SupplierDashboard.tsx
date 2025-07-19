@@ -26,10 +26,41 @@ type SupplierDetails = {
 };
 
 const SupplierDashboard = () => {
-  const [weather, setWeather] = useState<any>(null);
+  const [weather, setWeather] = useState<{
+    current?: {
+      temperature: number;
+      wind_speed: number;
+      rain: number;
+      wind_direction: number;
+      solar_irradiance: number;
+      humidity: number;
+    };
+    forecast?: Array<{
+      date: string;
+      temperature_max: number;
+      temperature_min: number;
+      rain: number;
+      wind_speed: number;
+    }>;
+    air?: {
+      aqi: number;
+      level: string;
+    };
+  } | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [contacts, setContacts] = useState<any[]>([]);
-  const [inventory, setInventory] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<
+    Array<{
+      pesticide_name: string;
+      contact_date: string;
+    }>
+  >([]);
+  const [inventory, setInventory] = useState<
+    Array<{
+      pesticide: string;
+      stock: number;
+      price: number;
+    }>
+  >([]);
   const userName = localStorage.getItem("user_name");
   const userId = localStorage.getItem("user_id");
   const [showAlert, setShowAlert] = useState(false);
@@ -70,14 +101,20 @@ const SupplierDashboard = () => {
         lon = 77.209;
       }
       const weatherData = await getWeatherData(Number(lat), Number(lon));
-      const air = await getAirQuality(Number(lat), Number(lon));
+      const airData = await getAirQuality(Number(lat), Number(lon));
+      const air = {
+        aqi: airData.pm2_5 || 0,
+        level: airData.pm2_5 > 50 ? "Moderate" : "Good",
+      };
       setWeather({ ...weatherData, air });
     }
     fetchWeather();
 
     // Fetch additional info from backend
     if (userId && userId !== "undefined" && userId !== "null") {
-      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/user_info/${userId}`)
+      fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/user_info/${userId}`
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.details) {
@@ -91,11 +128,15 @@ const SupplierDashboard = () => {
 
     // Fetch all contacts for popularity stats
     if (userId) {
-      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/contacts_for_supplier/${userId}`)
+      fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/contacts_for_supplier/${userId}`
+      )
         .then((res) => res.json())
         .then((data) => setContacts(data.contacts || []));
       // Fetch inventory
-      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_inventory/${userId}`)
+      fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_inventory/${userId}`
+      )
         .then((res) => res.json())
         .then((data) => setInventory(data.inventory || []));
     }
@@ -199,7 +240,7 @@ const SupplierDashboard = () => {
                     <div className="mt-4">
                       <h6>3-Day Forecast</h6>
                       <div className="row">
-                        {weather.forecast?.map((day: any, i: number) => (
+                        {weather.forecast?.map((day, i: number) => (
                           <div className="col-md-4" key={i}>
                             <div className="border rounded p-2 text-center shadow-sm">
                               <div

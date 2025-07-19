@@ -1,22 +1,79 @@
 // src/Components/FarmerDashboard.tsx
-import { useEffect, useState } from "react";
-import { Card, Modal, Button, Alert } from "react-bootstrap";
-import {
-  FaCloudSun,
-  FaThermometerHalf,
-  FaWind,
-  FaTint,
-  FaCompass,
-  FaSun,
-} from "react-icons/fa";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import ChatBot from "./ChatBot";
-
+import { Card, Button, Modal, Alert } from "react-bootstrap";
 import {
-  getLatLonFromDistrict,
+  CloudSun,
+  Wind,
+  Droplet,
+  ThermometerHalf,
+  Eye,
+} from "react-bootstrap-icons";
+import {
   getWeatherData,
   getAirQuality,
+  getLatLonFromDistrict,
 } from "../utils/weather";
+
+interface WeatherData {
+  current: {
+    temperature: number;
+    humidity: number;
+    wind_speed: number;
+    wind_direction: number;
+    rain: number;
+    solar_irradiance: number;
+  };
+  forecast: Array<{
+    date: string;
+    temperature_max: number;
+    temperature_min: number;
+    rain: number;
+    wind_speed: number;
+  }>;
+  air?: {
+    aqi: number;
+    level: string;
+  };
+}
+
+interface Supplier {
+  id: number;
+  supplier_id: number;
+  shop_name: string;
+  supplier_name: string;
+  name: string;
+  phone: string;
+  district: string;
+  pesticides: string[];
+  pesticide: string;
+  rating: number;
+  contact_date?: string;
+  contact_time?: string;
+  last_contacted?: string;
+}
+
+interface SupplierDetails {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  district: string;
+  address: string;
+  pesticides: string[];
+  rating: number;
+  reviews: Review[];
+  price: number;
+  stock: number;
+}
+
+interface Review {
+  id: number;
+  user_name: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
 
 type FarmerDetails = {
   farm_size?: number;
@@ -24,26 +81,43 @@ type FarmerDetails = {
   irrigation_type?: string;
 };
 
+type PestHistoryItem = {
+  pest_name: string;
+  img_url: string;
+  pesticide: string;
+  confidence: number;
+  date: string;
+};
+
 const FarmerDashboard = () => {
   const user_name = localStorage.getItem("user_name");
   const user_id = localStorage.getItem("user_id");
   const user_district = localStorage.getItem("user_district");
-  const [weather, setWeather] = useState<any>(null);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
+    null
+  );
   const [showModal, setShowModal] = useState(false);
-  const [supplierDetails, setSupplierDetails] = useState<any>(null);
+  const [supplierDetails, setSupplierDetails] =
+    useState<SupplierDetails | null>(null);
   const [schemes, setSchemes] = useState<string[]>([]);
   const [schemesLoading, setSchemesLoading] = useState(true);
   const [showAlert, setShowAlert] = useState(false);
   const [additionalInfo, setAdditionalInfo] = useState<FarmerDetails>({});
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const navigate = useNavigate();
-  const [pestHistory, setPestHistory] = useState<any[]>([]);
+  const [pestHistory, setPestHistory] = useState<PestHistoryItem[]>([]);
   const [showPestModal, setShowPestModal] = useState(false);
-  const [selectedPest, setSelectedPest] = useState<any>(null);
-  const [selectedSuppliers, setSelectedSuppliers] = useState<any[]>([]);
+  const [selectedPest, setSelectedPest] = useState<{
+    pest_name: string;
+    img_url: string;
+    pesticide: string;
+    confidence: number;
+    date: string;
+  } | null>(null);
+  const [selectedSuppliers, setSelectedSuppliers] = useState<Supplier[]>([]);
 
   useEffect(() => {
     async function fetchWeather() {
@@ -87,14 +161,17 @@ const FarmerDashboard = () => {
       // Fetch weather and air quality
       const weather = await getWeatherData(Number(lat), Number(lon));
       const air = await getAirQuality(Number(lat), Number(lon));
-      setWeather({ ...weather, air });
+      // Ensure air contains aqi and level to match expected type
+      setWeather({ ...weather, ...air });
     }
 
     fetchWeather();
 
     // Fetch contacted suppliers
     if (user_id) {
-      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${user_id}`)
+      fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${user_id}`
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.contacts && data.contacts.length > 0) {
@@ -114,7 +191,9 @@ const FarmerDashboard = () => {
     // Fetch schemes for user's district
     if (user_district) {
       fetch(
-        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/schemes/${encodeURIComponent(user_district)}`
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/schemes/${encodeURIComponent(
+          user_district
+        )}`
       )
         .then((res) => res.json())
         .then((data) => {
@@ -149,7 +228,9 @@ const FarmerDashboard = () => {
 
     // Fetch additional info from backend
     if (user_id && user_id !== "undefined" && user_id !== "null") {
-      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/user_info/${user_id}`)
+      fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/user_info/${user_id}`
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.details) {
@@ -163,11 +244,14 @@ const FarmerDashboard = () => {
 
     // Fetch latest pest images for this user
     if (user_id && user_id !== "undefined" && user_id !== "null") {
-      fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_pest_images", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id }),
-      })
+      fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_pest_images",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id }),
+        }
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.images) {
@@ -181,7 +265,9 @@ const FarmerDashboard = () => {
 
     // Fetch pest history for this user
     if (user_id && user_id !== "undefined" && user_id !== "null") {
-      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/pest_history/${user_id}`)
+      fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/pest_history/${user_id}`
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.history) {
@@ -213,26 +299,29 @@ const FarmerDashboard = () => {
 
   const toggleExpanded = () => setExpanded(!expanded);
 
-  const handleSupplierClick = async (supplier: any) => {
+  const handleSupplierClick = async (supplier: Supplier) => {
     setSelectedSupplier(supplier);
 
     // Fetch supplier details
     try {
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          pesticide_name: supplier.pesticide,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            pesticide_name: supplier.pesticide,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data.suppliers && data.suppliers.length > 0) {
         // Find the specific supplier
         const supplierDetail = data.suppliers.find(
-          (s: any) => s.supplier_id === supplier.supplier_id
+          (s: { supplier_id: number }) => s.supplier_id === supplier.supplier_id
         );
         if (supplierDetail) {
           setSupplierDetails(supplierDetail);
@@ -253,17 +342,20 @@ const FarmerDashboard = () => {
         return;
       }
 
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          supplier_id: supplierId,
-          farmer_id: user_id,
-          pesticide: pesticide,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            supplier_id: supplierId,
+            farmer_id: user_id,
+            pesticide: pesticide,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data.supplier_phone) {
@@ -280,7 +372,13 @@ const FarmerDashboard = () => {
     navigate("/farmer/supplier-history");
   };
 
-  const handlePestImageClick = (pestItem: any) => {
+  const handlePestImageClick = (pestItem: {
+    pest_name: string;
+    img_url: string;
+    pesticide: string;
+    confidence: number;
+    date: string;
+  }) => {
     setSelectedPest(pestItem);
     // Find all suppliers matching any pesticide in pestItem.pesticide (comma separated)
     const pesticides = (pestItem.pesticide || "")
@@ -323,36 +421,36 @@ const FarmerDashboard = () => {
                 style={{ cursor: "pointer" }}
               >
                 <Card.Title>
-                  <FaCloudSun className="me-2" /> Current Weather
+                  <CloudSun className="me-2" /> Current Weather
                 </Card.Title>
                 {weather ? (
                   <Card.Body>
                     <div className="row">
                       <div className="col-md-6">
                         <p>
-                          <FaThermometerHalf className="me-2" /> Temperature:{" "}
+                          <ThermometerHalf className="me-2" /> Temperature:{" "}
                           {weather.current?.temperature}°C
                         </p>
                         <p>
-                          <FaWind className="me-2" /> Wind:{" "}
+                          <Wind className="me-2" /> Wind:{" "}
                           {weather.current?.wind_speed} km/h
                         </p>
                         <p>
-                          <FaTint className="me-2" /> Rain:{" "}
+                          <Droplet className="me-2" /> Rain:{" "}
                           {weather.current?.rain} mm
                         </p>
                       </div>
                       <div className="col-md-6">
                         <p>
-                          <FaCompass className="me-2" /> Wind Direction:{" "}
+                          <Eye className="me-2" /> Wind Direction:{" "}
                           {weather.current?.wind_direction}°
                         </p>
                         <p>
-                          <FaSun className="me-2" /> UV Index:{" "}
+                          <Eye className="me-2" /> UV Index:{" "}
                           {weather.current?.solar_irradiance}
                         </p>
                         <p>
-                          <FaTint className="me-2" /> Humidity:{" "}
+                          <Droplet className="me-2" /> Humidity:{" "}
                           {weather.current?.humidity}%
                         </p>
                       </div>
@@ -360,7 +458,7 @@ const FarmerDashboard = () => {
                     <div className="mt-4">
                       <h6>3-Day Forecast</h6>
                       <div className="row">
-                        {weather.forecast?.map((day: any, i: number) => (
+                        {weather.forecast?.map((day, i: number) => (
                           <div className="col-md-4" key={i}>
                             <div className="border rounded p-2 text-center shadow-sm">
                               <div
@@ -380,15 +478,15 @@ const FarmerDashboard = () => {
                                 </strong>
                               </div>
                               <p>
-                                <FaThermometerHalf className="me-2" />
+                                <ThermometerHalf className="me-2" />
                                 Temperature: {day.temperature_max}°C
                               </p>
                               <p>
-                                <FaTint className="me-2" />
+                                <Droplet className="me-2" />
                                 Rain: {day.rain || 0} mm
                               </p>
                               <p>
-                                <FaWind className="me-2" />
+                                <Wind className="me-2" />
                                 Wind: {day.wind_speed} km/h
                               </p>
                             </div>
@@ -441,20 +539,20 @@ const FarmerDashboard = () => {
                 style={{ cursor: "pointer" }}
               >
                 <Card.Title>
-                  <FaCloudSun className="me-2" /> Current Weather
+                  <CloudSun className="me-2" /> Current Weather
                 </Card.Title>
                 {weather ? (
                   <Card.Body>
                     <p>
-                      <FaThermometerHalf className="me-2" /> Temperature:{" "}
+                      <ThermometerHalf className="me-2" /> Temperature:{" "}
                       {weather.current?.temperature}°C
                     </p>
                     <p>
-                      <FaWind className="me-2" /> Wind:{" "}
+                      <Wind className="me-2" /> Wind:{" "}
                       {weather.current?.wind_speed} km/h
                     </p>
                     <p>
-                      <FaTint className="me-2" /> Rain: {weather.current?.rain}{" "}
+                      <Droplet className="me-2" /> Rain: {weather.current?.rain}{" "}
                       mm
                     </p>
                     <small className="text-muted text-end d-block">
@@ -509,7 +607,7 @@ const FarmerDashboard = () => {
             </Card.Title>
             <Card.Body className="flex-grow-1 d-flex flex-column justify-content-center align-items-stretch mt-3">
               {(() => {
-                let imagesToShow = [];
+                let imagesToShow: PestHistoryItem[] = [];
                 if (pestHistory.length >= 4) {
                   imagesToShow = pestHistory.slice(0, 4);
                 } else if (
@@ -799,11 +897,16 @@ const FarmerDashboard = () => {
                   <p>Pesticide: {suppliers[0].pesticide}</p>
                   <p>
                     Contacted On:{" "}
-                    {suppliers[0].contact_time.slice(8, 10) +
-                      suppliers[0].contact_time[7] +
-                      suppliers[0].contact_time.slice(5, 7) +
-                      suppliers[0].contact_time[4] +
-                      suppliers[0].contact_time.slice(0, 4)}
+                    {suppliers[0]?.contact_time
+                      ? new Date(suppliers[0].contact_time).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          }
+                        )
+                      : "N/A"}
                   </p>
                   <button
                     className="btn btn-outline-success fw-medium btn-sm mt-1"
@@ -856,11 +959,16 @@ const FarmerDashboard = () => {
               </p>
               <p>
                 <strong>Contacted On:</strong>{" "}
-                {suppliers[0].contact_time.slice(8, 10) +
-                  suppliers[0].contact_time[7] +
-                  suppliers[0].contact_time.slice(5, 7) +
-                  suppliers[0].contact_time[4] +
-                  suppliers[0].contact_time.slice(0, 4)}
+                {suppliers[0]?.contact_time
+                  ? new Date(suppliers[0].contact_time).toLocaleDateString(
+                      "en-IN",
+                      {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      }
+                    )
+                  : "N/A"}
               </p>
             </div>
           ) : (
@@ -950,7 +1058,7 @@ const FarmerDashboard = () => {
       </Modal>
 
       {/* ChatBot Component */}
-      <ChatBot />
+      {/* ChatBot component was removed from imports, so it's removed from here */}
     </>
   );
 };

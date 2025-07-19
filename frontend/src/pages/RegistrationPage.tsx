@@ -2,12 +2,7 @@ import Registration from "../Components/Registration";
 import LoginHeader from "../Components/LoginHeader";
 const RegistrationPage = () => {
   return (
-    <div
-      className="min-vh-100"
-      style={{
-        background: "linear-gradient(135deg, #f6f2ed 0%, #e8f5e8 100%)",
-      }}
-    >
+    <div className="min-vh-100">
       <LoginHeader />
 
       <main className="container py-5">

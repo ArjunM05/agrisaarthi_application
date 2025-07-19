@@ -5,11 +5,12 @@ import {
   FaLinkedin,
   FaInfoCircle,
   FaCode,
+  FaPython,
   FaTrophy,
   FaUsers,
   FaDatabase,
   FaEye,
-  FaMobile,
+  FaReact,
   FaRoad,
 } from "react-icons/fa";
 import { GiWheat } from "react-icons/gi";
@@ -44,12 +45,7 @@ const LearnMorePage: React.FC = () => {
   };
 
   return (
-    <div
-      className="min-vh-100"
-      style={{
-        background: "linear-gradient(135deg, #f6f2ed 0%, #e8f5e8 100%)",
-      }}
-    >
+    <div className="min-vh-100">
       <Container className="py-5">
         {/* Hero Banner */}
         <Card
@@ -124,14 +120,14 @@ const LearnMorePage: React.FC = () => {
                   className="text-center p-3 rounded"
                   style={{ backgroundColor: "#F8F5FF" }}
                 >
-                  <FaMobile
+                  <FaReact
                     className="mb-2"
                     style={{ color: "#198754", fontSize: "1.5rem" }}
                   />
                   <h6 className="fw-bold mb-1" style={{ color: "#198754" }}>
-                    React Native
+                    React
                   </h6>
-                  <small className="text-muted">+ Expo</small>
+                  <small className="text-muted">(Frontend)</small>
                 </div>
               </Col>
               <Col md={6}>
@@ -139,12 +135,12 @@ const LearnMorePage: React.FC = () => {
                   className="text-center p-3 rounded"
                   style={{ backgroundColor: "#F8F5FF" }}
                 >
-                  <FaCode
+                  <FaPython
                     className="mb-2"
                     style={{ color: "#198754", fontSize: "1.5rem" }}
                   />
                   <h6 className="fw-bold mb-1" style={{ color: "#198754" }}>
-                    Node.js
+                    Flask
                   </h6>
                   <small className="text-muted">(Backend)</small>
                 </div>

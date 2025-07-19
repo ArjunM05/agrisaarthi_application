@@ -5,16 +5,37 @@ import HomeFooter from "../Components/HomeFooter";
 
 const SupplierHistoryPage = () => {
   const user_id = localStorage.getItem("user_id");
-  const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+  const [suppliers, setSuppliers] = useState<
+    Array<{
+      supplier_id: number;
+      supplier_name: string;
+      pesticide: string;
+      contact_time: string;
+    }>
+  >([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<{
+    supplier_id: number;
+    supplier_name: string;
+    pesticide: string;
+    contact_time: string;
+  } | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [supplierDetails, setSupplierDetails] = useState<any>(null);
+  const [supplierDetails, setSupplierDetails] = useState<{
+    supplier_id: number;
+    supplier_name: string;
+    shop_name: string;
+    address: string;
+    price: number;
+    stock: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     if (user_id) {
-      fetch(`https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${user_id}`)
+      fetch(
+        `https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/last_contacted_suppliers/${user_id}`
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.contacts && data.contacts.length > 0) {
@@ -30,26 +51,34 @@ const SupplierHistoryPage = () => {
     }
   }, [user_id]);
 
-  const handleSupplierClick = async (supplier: any) => {
+  const handleSupplierClick = async (supplier: {
+    supplier_id: number;
+    supplier_name: string;
+    pesticide: string;
+    contact_time: string;
+  }) => {
     setSelectedSupplier(supplier);
 
     // Fetch supplier details
     try {
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          pesticide_name: supplier.pesticide,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/supplier_details",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            pesticide_name: supplier.pesticide,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data.suppliers && data.suppliers.length > 0) {
         // Find the specific supplier
         const supplierDetail = data.suppliers.find(
-          (s: any) => s.supplier_id === supplier.supplier_id
+          (s: { supplier_id: number }) => s.supplier_id === supplier.supplier_id
         );
         if (supplierDetail) {
           setSupplierDetails(supplierDetail);
@@ -70,17 +99,20 @@ const SupplierHistoryPage = () => {
         return;
       }
 
-      const response = await fetch("https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          supplier_id: supplierId,
-          farmer_id: user_id,
-          pesticide: pesticide,
-        }),
-      });
+      const response = await fetch(
+        "https://agrosaarthi-api.ml.iit-ropar.truefoundry.cloud/call_supplier",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            supplier_id: supplierId,
+            farmer_id: user_id,
+            pesticide: pesticide,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data.supplier_phone) {
@@ -95,12 +127,7 @@ const SupplierHistoryPage = () => {
   };
 
   return (
-    <div
-      className="min-vh-100 d-flex flex-column"
-      style={{
-        background: "linear-gradient(135deg, #f6f2ed 0%, #e8f5e8 100%)",
-      }}
-    >
+    <div className="min-vh-100 d-flex flex-column">
       <HomeHeader />
       {loading ? (
         <div

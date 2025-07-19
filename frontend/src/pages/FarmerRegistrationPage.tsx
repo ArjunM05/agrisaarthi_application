@@ -3,12 +3,7 @@ import FarmerRegistration from "../Components/FarmerRegistration";
 
 const FarmerRegistrationPage = () => {
   return (
-    <div
-      className="min-vh-100"
-      style={{
-        background: "linear-gradient(135deg, #f6f2ed 0%, #e8f5e8 100%)",
-      }}
-    >
+    <div className="min-vh-100">
       <LoginHeader />
 
       <main className="container py-5">
