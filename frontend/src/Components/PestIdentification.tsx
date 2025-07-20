@@ -314,6 +314,7 @@ const PestIdentification: React.FC = () => {
                   Finding suppliers for recommended pesticides...
                 </p>
               </div>
+
             </div>
           ) : suppliers.length > 0 ? (
             <div className="mt-3">
