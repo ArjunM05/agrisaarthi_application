@@ -46,10 +46,14 @@ const LandingPage: React.FC = () => {
   };
 
   const handleInstall = () => {
+    // Convert Google Drive sharing link to direct download link
+    const driveId = "1TRSKaq04Xw9fRy9nxZbbXcWvkWUxk2_p";
+    const directDownloadUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
+    
     const link = document.createElement("a");
-    link.href =
-      "https://raw.githubusercontent.com/sushniaa/expendables/main/Week_1_Deliverables/Week-1_REPORT_Team-18.pdf";
-    link.download = "agrisaarthi-app.pdf";
+    link.href = directDownloadUrl;
+    link.download = "Agrosaarthi.apk";
+    link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
