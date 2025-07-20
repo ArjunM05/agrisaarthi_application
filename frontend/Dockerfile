@@ -17,13 +17,13 @@ COPY . .
 ARG VITE_SUPABASE_URL=""
 ARG VITE_SUPABASE_ANON_KEY=""
 ARG VITE_OPENWEATHER_API_KEY=""
-ARG VITE_BACKEND_URL="https://agrosaarthi-backend-ws-18-8000.ml.iit-ropar.truefoundry.cloud"
+#ARG VITE_BACKEND_URL="https://agrosaarthi-backend-ws-18-8000.ml.iit-ropar.truefoundry.cloud"
 
 # Set environment variables for the build
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
 ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 ENV VITE_OPENWEATHER_API_KEY=$VITE_OPENWEATHER_API_KEY
-ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+#ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 
 # Build the application
 RUN npm run build
