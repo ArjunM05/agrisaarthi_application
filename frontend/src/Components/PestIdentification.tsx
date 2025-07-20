@@ -159,7 +159,7 @@ const PestIdentification: React.FC = () => {
       // Predict pests from image
       const formData = new FormData();
       formData.append("file", image);
-      const response = await axios.post("https://agrosaarthi-backend-ws-18-8000.ml.iit-ropar.truefoundry.cloud/predict", formData, {
+      const response = await axios.post("/predict", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Accept: "application/json",
