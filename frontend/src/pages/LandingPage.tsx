@@ -49,7 +49,7 @@ const LandingPage: React.FC = () => {
     // Convert Google Drive sharing link to direct download link
     const driveId = "1TRSKaq04Xw9fRy9nxZbbXcWvkWUxk2_p";
     const directDownloadUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
-    
+
     const link = document.createElement("a");
     link.href = directDownloadUrl;
     link.download = "Agrosaarthi.apk";

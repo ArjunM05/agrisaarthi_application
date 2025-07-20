@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import supabase from "../utils/supabase";
 import ChatBot from "./ChatBot";
+import { API_BASE_URL } from "../utils/api";
 
 interface Supplier {
   supplier_id: number;
@@ -159,7 +160,7 @@ const PestIdentification: React.FC = () => {
       // Predict pests from image
       const formData = new FormData();
       formData.append("file", image);
-      const response = await axios.post("/predict", formData, {
+      const response = await axios.post(`${API_BASE_URL}/predict`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Accept: "application/json",
