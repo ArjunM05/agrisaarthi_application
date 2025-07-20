@@ -10,7 +10,7 @@ export default defineConfig({
           target:
             "https://agrosaarthi-backend-ws-18-8000.ml.iit-ropar.truefoundry.cloud",
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/predict/, "/predict"),
+          rewrite: (path: string) => path.replace(/^\/predict/, "/predict"),
           secure: false,
         },
       },

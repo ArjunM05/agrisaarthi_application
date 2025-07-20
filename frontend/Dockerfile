@@ -7,11 +7,17 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including dev dependencies needed for build)
+RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Set build-time environment variables (you can override these during build)
+ARG VITE_SUPABASE_URL=""
+ARG VITE_SUPABASE_ANON_KEY=""
+ARG VITE_WEATHER_API_KEY=""
+ARG VITE_BACKEND_URL="https://agrosaarthi-backend-ws-18-8000.ml.iit-ropar.truefoundry.cloud"
 
 # Build the application
 RUN npm run build
