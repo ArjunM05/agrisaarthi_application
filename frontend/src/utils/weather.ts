@@ -1,4 +1,4 @@
-export const OPENWEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || import.meta.env.VITE_WEATHER_API_KEY;
+export const OPENWEATHER_API_KEY = (window as any).ENV?.VITE_OPENWEATHER_API_KEY || import.meta.env.VITE_OPENWEATHER_API_KEY || import.meta.env.VITE_WEATHER_API_KEY;
 
 export async function getLatLonFromDistrict(district: string) {
   // Still use OpenWeather geocoding for lat/lon

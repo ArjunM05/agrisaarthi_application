@@ -37,8 +37,17 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
+# Create a script to inject environment variables at runtime
+RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'set -e' >> /docker-entrypoint.sh && \
+    echo 'if [ -n "$VITE_SUPABASE_URL" ] && [ -n "$VITE_SUPABASE_ANON_KEY" ]; then' >> /docker-entrypoint.sh && \
+    echo '  echo "window.ENV = { VITE_SUPABASE_URL: \"$VITE_SUPABASE_URL\", VITE_SUPABASE_ANON_KEY: \"$VITE_SUPABASE_ANON_KEY\", VITE_OPENWEATHER_API_KEY: \"$VITE_OPENWEATHER_API_KEY\" };" > /usr/share/nginx/html/env-config.js' >> /docker-entrypoint.sh && \
+    echo 'fi' >> /docker-entrypoint.sh && \
+    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
+
 # Expose port 80
 EXPOSE 80
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"] 
+# Start the entrypoint script
+CMD ["/docker-entrypoint.sh"] 
