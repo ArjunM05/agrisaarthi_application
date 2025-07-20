@@ -160,7 +160,7 @@ const PestIdentification: React.FC = () => {
       // Predict pests from image
       const formData = new FormData();
       formData.append("file", image);
-      const response = await axios.post(`${API_BASE_URL}/predict`, formData, {
+      const response = await axios.post(`/predict`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Accept: "application/json",
@@ -314,7 +314,6 @@ const PestIdentification: React.FC = () => {
                   Finding suppliers for recommended pesticides...
                 </p>
               </div>
-
             </div>
           ) : suppliers.length > 0 ? (
             <div className="mt-3">
