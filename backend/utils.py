@@ -491,7 +491,7 @@ def get_last_contacted_suppliers(farmer_id: str):
         farmer_id (int): The farmer's ID.
     """
     try:
-        result = db.table('suppliers_contacted').select('supplier_id, pesticide_name, contact_time').eq('farmer_id', farmer_id).order('contact_time', desc=True).execute()
+        result = db.table('suppliers_contacted').select('supplier_id, pesticide_name, contact_time').eq('farmer_id', farmer_id).order('contact_time', desc=True).limit(25).execute()
         if not result.data:
             return []
         contacts = []
